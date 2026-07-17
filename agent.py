@@ -4,7 +4,7 @@ from prompts import (
     SOFTWARE_PROMPT,
     HEALTHCARE_PROMPT,
     GENERAL_PROMPT,
-    SUBJECT_PROMPT,
+    
 )
 from gemini_service import GeminiService
 from logs.log import log_error
@@ -40,9 +40,9 @@ class OutreachAgent:
     
     def choose_prompt(self, lead:Lead) -> str:
         """
-    Select and personalize the prompt
-    based on the given industry.
-    """
+      Select and personalize the prompt
+      based on the given industry.
+      """
         base_prompt = PROMPTS.get(lead.industry, GENERAL_PROMPT)
 
         return f"""
@@ -67,11 +67,21 @@ class OutreachAgent:
      - Do NOT include explanations, notes, or headings.
        IMPORTANT:
 
-     -Do NOT generate a subject line.
+     -IMPORTANT:
 
-     -The email must start directly with the greeting.
+     -Return your response in this exact format:
 
+      Subject:
+      <email subject>
 
+      Email:
+      <complete email>
+
+     -Do not include explanations.
+     - Do not use markdown.
+     - Return only the subject and email.
+
+    -The email must start directly with the greeting.
      - Address the recipient by name.
 
      - Mention the recipient company naturally.
@@ -95,53 +105,48 @@ class OutreachAgent:
      {base_prompt}
 
      Return ONLY the final email.
+     
+    -Generate a DIFFERENT version from any previous email.
+    -Use different wording, opening, CTA, and sentence structure.
+    -Do not repeat the previous email.
      """
-
-    # -------------------------------------
-    def generate_email(self, lead: Lead) -> str | None:
+    
+    
+    def generate_outreach(self, lead: Lead) -> tuple[str | None, str | None]:
         """
-         Generate a personalized outreach
-    email using Gemini AI.
-    """
-        
-        print(f"Generating outreach email for {self.company}")
+        Generate subject and email together using a single Gemini API call.
+        """
+
+        print(f"Generating outreach for {lead.company}")
 
         prompt = self.choose_prompt(lead)
 
-        email = self.gemini.generate(prompt)
+        response = self.gemini.generate(prompt)
 
-        if not email:
+        if not response:
 
-            log_error("Email generation failed.")
-            return None
-        return email
+            log_error("Outreach generation failed.")
+            return None, None
 
+        if response == "QUOTA_EXCEEDED":
+            return "QUOTA_EXCEEDED", "QUOTA_EXCEEDED"
+
+        try:
+
+            subject = response.split("Email:")[0]
+            subject = subject.replace("Subject:", "").strip()
+
+            email = response.split("Email:")[1].strip()
+
+            return subject, email
+
+        except Exception:
+
+            log_error("Response parsing failed.")
+
+            return None, None
     # -------------------------------------
-    def generate_subject(self, lead: Lead) -> str | None:
-        """
-     Generate a professional email subject.
-    """
-
-        prompt = f"""
-        {SUBJECT_PROMPT}
-
-        Recipient Name: {lead.name}
-
-        Recipient Company: {lead.company}
-
-        Recipient Position: {lead.position}
-
-        Industry: {lead.industry}
-"""
-
-        subject = self.gemini.generate(prompt)
-
-        if not subject:
-           log_error("Subject generation failed.")
-           return None
-
-        return subject
-#--------------------------------------------------
+    #--------------------------------------------------
     def save_email(self, subject: str, email: str, lead: Lead) -> None:
         """
         Save the generated subject and email to a JSON file.
@@ -201,3 +206,4 @@ class OutreachAgent:
              log_error(f"Load Error: {e}")
 
              return None
+        

@@ -24,11 +24,19 @@ class GeminiService:
             )
 
             print("Gemini Response Received.")
-
+            print("Response:", response.text)
             return response.text
 
         except Exception as e:
 
-            print(f"Gemini Error: {e}")
+            import traceback
+
+            print("=" * 50)
+            print("GEMINI ERROR")
+            print(e)
+            traceback.print_exc()
+            print("=" * 50)
+            if "RESOURCE_EXHAUSTED" in str(e) or "429" in str(e):
+                return "QUOTA_EXCEEDED"
 
             return None

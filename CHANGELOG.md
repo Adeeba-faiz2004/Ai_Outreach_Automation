@@ -871,3 +871,106 @@ Gemini Service (Next Phase)
 CSV Upload Module Completed Successfully
 Lead Preview Working
 Dashboard Stable
+
+############3
+# Changelog
+
+## Version 0.8.0
+
+### Date
+
+---
+
+---
+
+## New Features
+
+* Merged subject generation and email generation into a single Gemini API request.
+* Added `generate_outreach()` method to handle complete outreach generation.
+* Added response parsing to separate the generated subject and email.
+* Implemented automatic Gemini quota detection.
+* Added automatic campaign termination when the API quota is exhausted.
+* Added campaign status tracking:
+
+  * Completed
+  * Partially Completed
+  * Failed
+  * Quota Exhausted
+* Added Campaign Duration metric.
+* Added Copy Email functionality.
+* Added individual PDF download for generated emails.
+* Added automatic email storage using JSON.
+* Added Campaign History module (load functionality).
+
+---
+
+## Improvements
+
+* Reduced Gemini API usage by approximately **50%**.
+* Improved application performance by eliminating redundant API calls.
+* Reduced response generation time.
+* Improved consistency between generated subjects and email content.
+* Improved dashboard analytics.
+* Improved Session State management.
+* Improved regeneration workflow by using current sidebar settings instead of old cached values.
+* Improved error handling during AI generation.
+
+---
+
+## Bug Fixes
+
+* Fixed `AttributeError` related to missing Session State variables.
+* Fixed `NoneType` errors during average email length calculation.
+* Fixed regenerate button not updating the dashboard.
+* Fixed regenerated email not replacing the previous email.
+* Fixed incorrect success rate calculation.
+* Fixed incorrect campaign status updates.
+* Fixed PDF generation issues.
+* Fixed Gemini response parsing failures.
+* Fixed application crash when Gemini quota was exceeded.
+* Fixed retry workflow after failed email generation.
+
+---
+
+## Files Modified
+
+* `dashboard.py`
+* `agent.py`
+* `gemini_service.py`
+
+---
+
+## Current Project Status
+
+| Module                       | Status         |
+| ---------------------------- | -------------- |
+| CSV Upload                   | ✅ Completed    |
+| Gemini Integration           | ✅ Completed    |
+| Single API Call Optimization | ✅ Completed    |
+| Outreach Generation          | ✅ Completed    |
+| Retry / Regenerate           | ✅ Completed    |
+| Campaign Analytics           | ✅ Completed    |
+| TXT Export                   | ✅ Completed    |
+| PDF Export                   | ✅ Completed    |
+| Copy Email                   | ✅ Completed    |
+| Campaign Status              | ✅ Completed    |
+| JSON Storage                 | ✅ Completed    |
+| Campaign History             | 🚧 In Progress |
+| Charts                       | ⏳ Pending      |
+| Search & Filter              | ⏳ Pending      |
+| n8n Integration              | ⏳ Pending      |
+| Gmail Automation             | ⏳ Pending      |
+| Final UI Polish              | ⏳ Pending      |
+
+---
+
+## Next Milestone
+
+* Complete Campaign History.
+* Add interactive dashboard charts.
+* Implement search and filtering.
+* Integrate n8n automation workflow.
+* Connect Gmail for automated email delivery.
+* Final UI enhancements.
+* Documentation and presentation preparation.
+

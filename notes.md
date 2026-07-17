@@ -2936,3 +2936,136 @@ CSV Upload Module Completed Successfully ✅
 Dashboard Stabilized ✅
 Lead Preview Working Successfully ✅
 
+
+########## Development Notes
+
+## Topic: Optimizing Gemini API Calls (Single API Call for Subject & Email Generation)
+
+### Objective
+
+Initially, the AI Outreach Agent generated the email subject and email body using two independent Gemini API requests. Although this approach produced the desired output, it introduced unnecessary latency, increased API usage, and consumed the Gemini quota much faster.
+
+---
+
+## Previous Workflow
+
+The original workflow was:
+
+1. Generate the subject.
+2. Send the first request to Gemini.
+3. Receive the generated subject.
+4. Generate the email.
+5. Send the second request to Gemini.
+6. Receive the generated email.
+
+This meant that every lead required two complete API requests.
+
+For example:
+
+* 5 Leads → 10 API Calls
+* 20 Leads → 40 API Calls
+* 100 Leads → 200 API Calls
+
+As the number of leads increased, the application quickly exhausted the free Gemini quota.
+
+---
+
+## Problems
+
+### 1. Higher API Consumption
+
+Each lead required two separate requests.
+
+This doubled the overall API usage and significantly reduced the number of emails that could be generated under the free quota.
+
+---
+
+### 2. Increased Response Time
+
+Because the application waited for the subject before requesting the email, the user experienced unnecessary delays.
+
+Overall campaign generation became noticeably slower.
+
+---
+
+### 3. Output Inconsistency
+
+Since the subject and email were produced independently, there was no guarantee that both responses would perfectly match.
+
+Sometimes the subject suggested one idea while the email emphasized another.
+
+---
+
+## Implemented Solution
+
+The prompt was redesigned to instruct Gemini to generate both the subject and the email together.
+
+The AI now returns a response in the following format:
+
+Subject: <Generated Subject>
+
+Email: <Generated Email>
+
+Only one API request is required.
+
+---
+
+## Response Parsing
+
+Because both outputs are returned inside one response, the application extracts them using string parsing.
+
+The response is divided into two sections:
+
+* Subject
+* Email
+
+These values are then stored separately and displayed independently inside the dashboard.
+
+---
+
+## Benefits
+
+* Reduced Gemini API usage by approximately 50%.
+* Faster campaign generation.
+* Better consistency between subject and email.
+* Lower probability of exceeding Gemini quota.
+* Cleaner and more maintainable architecture.
+* Improved scalability for larger campaigns.
+
+---
+
+## Interview Revision
+
+**Q: Why did you merge subject and email generation into a single API call?**
+
+Answer:
+
+To optimize the application's performance by reducing API requests, decreasing response time, minimizing quota consumption, and ensuring that both the generated subject and email remain contextually consistent.
+
+---
+
+**Q: Why is response parsing necessary?**
+
+Answer:
+
+Gemini returns both the subject and email as one text response. The application separates both sections before storing and displaying them.
+
+---
+
+**Q: What happens if parsing fails?**
+
+Answer:
+
+The parsing logic is wrapped inside a try-except block. If parsing fails, the application logs the error and returns None so the dashboard can gracefully handle the failure without crashing.
+
+---
+
+## Key Learning
+
+This optimization follows an important software engineering principle:
+
+> Minimize expensive external API calls whenever multiple related tasks can be completed using a single request.
+
+This improves performance, reduces operational cost, and creates a more scalable application.
+
+
