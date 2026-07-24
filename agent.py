@@ -1,4 +1,6 @@
 from datetime import datetime
+
+
 import json
 from prompts import (
     SOFTWARE_PROMPT,
@@ -35,6 +37,7 @@ class OutreachAgent:
         self.email_length = email_length
 
         self.gemini = GeminiService()
+       
     # -------------------------------------
 
     
@@ -111,30 +114,41 @@ class OutreachAgent:
     -Do not repeat the previous email.
      """
     
-    
+    # ------------------------------------------------
     def generate_outreach(self, lead: Lead) -> tuple[str | None, str | None]:
         """
-        Generate subject and email together using a single Gemini API call.
+        Generate subject and email using Google Gemini AI.
         """
 
         print(f"Generating outreach for {lead.company}")
 
         prompt = self.choose_prompt(lead)
 
+        # -----------------------------
+        # GENERATE USING GEMINI
+        # -----------------------------
         response = self.gemini.generate(prompt)
-
-        if not response:
-
-            log_error("Outreach generation failed.")
-            return None, None
 
         if response == "QUOTA_EXCEEDED":
             return "QUOTA_EXCEEDED", "QUOTA_EXCEEDED"
 
+        if response == "GENERATION_FAILED":
+            return "GENERATION_FAILED", "GENERATION_FAILED"
+
+        if not response:
+            log_error("Outreach generation failed.")
+            return None, None
+
+    # -----------------------------
+    # PARSE RESPONSE
+    # -----------------------------
         try:
 
-            subject = response.split("Email:")[0]
-            subject = subject.replace("Subject:", "").strip()
+            subject = (
+                response.split("Email:")[0]
+                .replace("Subject:", "")
+                .strip()
+        )
 
             email = response.split("Email:")[1].strip()
 
@@ -145,7 +159,6 @@ class OutreachAgent:
             log_error("Response parsing failed.")
 
             return None, None
-    # -------------------------------------
     #--------------------------------------------------
     def save_email(self, subject: str, email: str, lead: Lead) -> None:
         """

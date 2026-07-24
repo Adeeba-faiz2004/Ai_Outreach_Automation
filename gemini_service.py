@@ -39,4 +39,4 @@ class GeminiService:
             if "RESOURCE_EXHAUSTED" in str(e) or "429" in str(e):
                 return "QUOTA_EXCEEDED"
 
-            return None
+            return "GENERATION_FAILED"
