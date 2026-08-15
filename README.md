@@ -80,24 +80,37 @@ python app.py
 
 ## 📌 Current Features
 
-* AI Email Generation
-* AI Subject Generation
-* CSV Lead Management
-* JSON Storage
-* TXT Export
-* SMTP Email Sending
+
+
+* **CSV Lead Upload** — Upload and process lead data directly through the Streamlit dashboard.
+* **AI-Powered Personalization** — Generate personalized outreach emails for individual leads using Google Gemini AI.
+* **Custom Email Settings** — Configure sender name, company, tone, and email length.
+* **Email Preview** — Review generated emails before sending them.
+* **Automated Email Sending** — Send generated outreach emails through SMTP.
+* **Campaign Management** — Create and save campaigns for organized outreach.
+* **User Authentication** — Secure user registration and login using password hashing.
+* **SQLite Database** — Persist users, campaigns, and lead information locally.
+* **Campaign Dashboard** — View campaign status, generated emails, and outreach results through a Streamlit interface.
+* **Email Export** — Save generated emails for record-keeping and further use.
+* **Campaign History** — Store previous campaigns and their associated lead information.
+* **n8n Integration** — Prepared for workflow automation and future expansion of automated outreach processes.
 
 ---
 
 ## 🔮 Future Improvements
 
-* Streamlit Dashboard
-* HTML Email Templates
-* Email Tracking
-* Analytics Dashboard
-* Scheduling
-* Multiple AI Providers
-* Database Integration
+
+
+* **Reply Tracking** — Track incoming replies and identify which leads responded to each campaign.
+* **Automated Follow-ups** — Schedule personalized follow-up emails based on the lead's response status.
+* **Advanced Campaign Management** — Allow users to create, pause, resume, and manage multiple outreach campaigns.
+* **Email Analytics** — Add detailed metrics such as response rate, delivery rate, and campaign performance.
+* **AI-Powered Lead Personalization** — Improve personalization by analyzing company information, job roles, and industry context.
+* **n8n Workflow Automation** — Integrate n8n for automated lead processing, follow-ups, notifications, and campaign workflows.
+* **Improved Email Deliverability** — Add better sending strategies, validation, and safeguards to improve delivery and reduce spam risk.
+* **Enhanced Dashboard** — Introduce more detailed analytics, campaign insights, and performance visualizations.
+* **Scalable Database Architecture** — Improve the database layer to support larger datasets and multiple users efficiently.
+
 
 ---
 
