@@ -7,8 +7,20 @@ from services.csv_service import CSVService
 from components.sidebar import render_sidebar
 from components.analytics import render_analytics
 from components.email_cards import render_email_cards
+from components.send_all import render_send_all
 from components.exports import render_exports
 from components.history import render_history
+from auth import init_db, authenticate_user, create_user
+
+from auth import (
+    init_db,
+    authenticate_user,
+    create_user,
+    create_campaign,
+    get_user_campaigns,
+    save_lead,
+    get_campaign_leads,
+)
 
 
 # ==================================================
@@ -31,6 +43,176 @@ st.set_page_config(
 )
 
 # ==================================================
+# AUTHENTICATION
+# ==================================================
+
+init_db()
+
+
+def show_login():
+
+    st.markdown(
+        """
+        <div style="text-align:center; margin-top:60px;">
+            <h1>🔐 AI Outreach Agent</h1>
+            <p>Login to access your outreach dashboard.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    _, col, _ = st.columns([1, 2, 1])
+
+    with col:
+
+        login_email = st.text_input(
+            "📧 Email",
+            placeholder="you@example.com",
+            key="login_email",
+        )
+
+        login_password = st.text_input(
+            "🔑 Password",
+            type="password",
+            key="login_password",
+        )
+
+        if st.button(
+            "Login",
+            type="primary",
+            use_container_width=True,
+        ):
+
+            if not login_email or not login_password:
+                st.error("Please enter your email and password.")
+
+            else:
+
+                success, user = authenticate_user(
+                    login_email,
+                    login_password,
+                )
+
+                if success:
+
+                    st.session_state.authenticated = True
+                    st.session_state.user = user
+
+                    st.rerun()
+
+                else:
+
+                    st.error("Invalid email or password.")
+
+        st.divider()
+
+        st.caption("Don't have an account?")
+
+        if st.button(
+            "Create Account",
+            use_container_width=True,
+        ):
+            st.session_state.auth_page = "signup"
+            st.rerun()
+
+
+def show_signup():
+
+    st.markdown(
+        """
+        <div style="text-align:center; margin-top:60px;">
+            <h1>📝 Create Account</h1>
+            <p>Create your AI Outreach Agent account.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    _, col, _ = st.columns([1, 2, 1])
+
+    with col:
+
+        email = st.text_input(
+            "📧 Email",
+            placeholder="you@example.com",
+            key="signup_email",
+        )
+
+        password = st.text_input(
+            "🔑 Password",
+            type="password",
+            key="signup_password",
+        )
+
+        confirm_password = st.text_input(
+            "🔑 Confirm Password",
+            type="password",
+            key="confirm_password",
+        )
+
+        if st.button(
+            "Create Account",
+            type="primary",
+            use_container_width=True,
+        ):
+
+            if not email or not password:
+                st.error("Email and password are required.")
+
+            elif password != confirm_password:
+                st.error("Passwords do not match.")
+
+            elif len(password) < 8:
+                st.error(
+                    "Password must be at least 8 characters."
+                )
+
+            else:
+
+                success, message = create_user(
+                    email,
+                    password,
+                )
+
+                if success:
+
+                    st.success(message)
+
+                    st.session_state.auth_page = "login"
+
+                    st.info(
+                        "Account created. You can now log in."
+                    )
+
+                else:
+
+                    st.error(message)
+
+        if st.button(
+            "← Back to Login",
+            use_container_width=True,
+        ):
+            st.session_state.auth_page = "login"
+            st.rerun()
+
+
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+if "auth_page" not in st.session_state:
+    st.session_state.auth_page = "login"
+
+
+if not st.session_state.authenticated:
+
+    if st.session_state.auth_page == "signup":
+        show_signup()
+    else:
+        show_login()
+
+    st.stop()
+
+# ==================================================
 # CUSTOM STYLING
 # ==================================================
 # A light branding layer on top of Streamlit's defaults — gives the app
@@ -39,60 +221,192 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
+        :root {
+            --surface: #ffffff;
+            --border: #E5E4F4;
+            --text-primary: #1E1B3A;
+            --text-muted: #6B7290;
+
+            --primary-700: #3D33B0;
+            --primary-600: #4F46E5;
+            --primary-500: #6D63EE;
+
+            --accent: #FF6B4A;
+            --accent-dark: #E85A3B;
+
+            --success-bg: #E7F8EE;
+            --success-text: #15803D;
+            --warn-bg: #FFF4E0;
+            --warn-text: #B45309;
+            --error-bg: #FDECEC;
+            --error-text: #C0392B;
+            --neutral-bg: #EEF0FB;
+            --neutral-text: #4338CA;
+        }
+
         /* Hide default Streamlit chrome for a cleaner, branded look */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
 
-        .hero {
-            background: linear-gradient(90deg, #1F3864 0%, #2E74B5 100%);
-            padding: 28px 32px;
-            border-radius: 14px;
-            color: #ffffff;
-            margin-bottom: 18px;
-        }
-        .hero h1 {
-            margin: 0;
-            font-size: 2rem;
-            font-weight: 700;
-        }
-        .hero p {
-            margin: 6px 0 0 0;
-            font-size: 1rem;
-            opacity: 0.9;
+        html, body, [class*="css"] {
+            color: var(--text-primary);
         }
 
+        h1, h2, h3, .hero h1, .kpi-card .kpi-value, .sb-brand .sb-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        /* ---------------- HERO ---------------- */
+        .hero {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(120deg, #3D33B0 0%, #4F46E5 45%, #6D63EE 100%);
+            padding: 34px 36px;
+            border-radius: 18px;
+            color: #ffffff;
+            margin-bottom: 22px;
+            box-shadow: 0 12px 28px rgba(79, 70, 229, 0.25);
+        }
+        .hero::after {
+            content: "";
+            position: absolute;
+            top: -60px;
+            right: -60px;
+            width: 220px;
+            height: 220px;
+            background: radial-gradient(circle, rgba(255,107,74,0.35) 0%, rgba(255,107,74,0) 70%);
+            pointer-events: none;
+        }
+        .hero h1 {
+            position: relative;
+            margin: 0;
+            font-size: 2.15rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+        .hero p {
+            position: relative;
+            margin: 8px 0 0 0;
+            font-size: 1.02rem;
+            color: rgba(255,255,255,0.88);
+        }
+        .hero .hero-badge {
+            position: relative;
+            display: inline-block;
+            margin-top: 14px;
+            padding: 5px 14px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            background: rgba(255, 107, 74, 0.9);
+            border-radius: 999px;
+        }
+
+        /* ---------------- KPI CARDS ---------------- */
         .kpi-card {
-            background: #ffffff;
-            border: 1px solid #e6e9ef;
-            border-radius: 12px;
-            padding: 16px 18px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-            text-align: center;
+            position: relative;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px 18px 16px 20px;
+            box-shadow: 0 2px 6px rgba(30, 27, 58, 0.05);
+            text-align: left;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.14);
+        }
+        .kpi-card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 14px;
+            bottom: 14px;
+            width: 4px;
+            border-radius: 4px;
+            background: linear-gradient(180deg, var(--primary-600), var(--accent));
+        }
+        .kpi-card .kpi-icon {
+            font-size: 1.1rem;
+            margin-bottom: 6px;
         }
         .kpi-card .kpi-label {
-            font-size: 0.82rem;
-            color: #6b7280;
+            font-size: 0.78rem;
+            color: var(--text-muted);
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.04em;
         }
         .kpi-card .kpi-value {
-            font-size: 1.7rem;
-            font-weight: 700;
-            color: #1F3864;
-            margin-top: 4px;
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--primary-700);
+            margin-top: 2px;
         }
+
+        /* ---------------- STATUS PILLS ---------------- */
         .status-pill {
             display: inline-block;
-            padding: 4px 14px;
+            padding: 5px 15px;
             border-radius: 999px;
-            font-weight: 600;
-            font-size: 0.85rem;
+            font-weight: 700;
+            font-size: 0.82rem;
+            letter-spacing: 0.01em;
         }
-        .status-ok      { background: #E6F4EA; color: #1E7E34; }
-        .status-warn    { background: #FFF4E5; color: #B8860B; }
-        .status-error   { background: #FDEAEA; color: #C0392B; }
-        .status-neutral { background: #EDF2FA; color: #2E74B5; }
+        .status-ok      { background: var(--success-bg); color: var(--success-text); }
+        .status-warn    { background: var(--warn-bg); color: var(--warn-text); }
+        .status-error   { background: var(--error-bg); color: var(--error-text); }
+        .status-neutral { background: var(--neutral-bg); color: var(--neutral-text); }
+
+        /* ---------------- BUTTONS ---------------- */
+        div.stButton > button[kind="primary"],
+        div.stDownloadButton > button {
+            background: linear-gradient(100deg, var(--primary-600), var(--accent));
+            border: none;
+            color: #fff;
+            font-weight: 700;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(255, 107, 74, 0.22);
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+        div.stButton > button[kind="primary"]:hover,
+        div.stDownloadButton > button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(255, 107, 74, 0.32);
+            color: #fff;
+        }
+        div.stButton > button[kind="secondary"] {
+            border-radius: 10px;
+            border-color: var(--border);
+            font-weight: 600;
+        }
+
+        /* ---------------- TABS ---------------- */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+        .stTabs [data-baseweb="tab"] {
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 8px 6px;
+        }
+        .stTabs [aria-selected="true"] {
+            color: var(--primary-700) !important;
+            border-bottom: 2px solid var(--accent) !important;
+        }
+
+        /* ---------------- MISC ---------------- */
+        div[data-testid="stMetric"] {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 14px;
+        }
     </style>
     """,
     unsafe_allow_html=True,
@@ -108,6 +422,7 @@ st.markdown(
     <div class="hero">
         <h1>📧 AI Outreach Agent</h1>
         <p>Generate personalized, high-converting outreach emails at scale using Google Gemini AI.</p>
+        <span class="hero-badge">✦ AI-Powered Campaigns</span>
     </div>
     """,
     unsafe_allow_html=True,
@@ -151,9 +466,10 @@ def status_pill(status: str) -> str:
     return f'<span class="status-pill {css_class}">{status}</span>'
 
 
-def kpi_card(label: str, value) -> str:
+def kpi_card(label: str, value, icon: str = "📌") -> str:
     return f"""
         <div class="kpi-card">
+            <div class="kpi-icon">{icon}</div>
             <div class="kpi-label">{label}</div>
             <div class="kpi-value">{value}</div>
         </div>
@@ -173,6 +489,92 @@ def kpi_card(label: str, value) -> str:
     show_history,
 ) = render_sidebar()
 
+st.sidebar.markdown(
+    f"👤 **Logged in as:**  \n"
+    f"{st.session_state.user['email']}"
+)
+
+if st.sidebar.button(
+    "🚪 Logout",
+    use_container_width=True,
+):
+    st.session_state.authenticated = False
+    st.session_state.pop("user", None)
+    st.session_state.auth_page = "login"
+    st.rerun()
+
+st.sidebar.divider()
+
+# ==================================================
+# CAMPAIGNS
+# ==================================================
+
+st.sidebar.divider()
+
+st.sidebar.subheader("📁 Campaigns")
+
+campaign_name = st.sidebar.text_input(
+    "Campaign Name",
+    placeholder="e.g. July Outreach",
+)
+
+if st.sidebar.button(
+    "➕ Create Campaign",
+    use_container_width=True,
+):
+
+    if campaign_name.strip():
+
+        campaign_id = create_campaign(
+            st.session_state.user["id"],
+            campaign_name.strip(),
+        )
+
+        st.sidebar.success(
+            f"Campaign #{campaign_id} created!"
+        )
+
+        st.rerun()
+
+    else:
+
+        st.sidebar.warning(
+            "Please enter a campaign name."
+        )
+
+
+campaigns = get_user_campaigns(
+    st.session_state.user["id"]
+)
+
+if campaigns:
+
+    campaign_options = {
+        campaign[1]: campaign[0]
+        for campaign in campaigns
+    }
+
+    selected_campaign_name = st.sidebar.selectbox(
+        "📁 Select Campaign",
+        options=list(campaign_options.keys()),
+        key="selected_campaign_name",
+    )
+
+    selected_campaign_id = campaign_options[
+        selected_campaign_name
+    ]
+
+    st.session_state.selected_campaign_id = (
+        selected_campaign_id
+    )
+
+else:
+
+    st.session_state.selected_campaign_id = None
+
+    st.sidebar.info(
+        "Create a campaign first."
+    )
 st.sidebar.divider()
 if st.sidebar.button("🔄 Reset Campaign", use_container_width=True):
     reset_campaign()
@@ -262,6 +664,19 @@ with tab_preview:
             start_time = time.time()
 
             st.session_state.results = []
+            
+            st.session_state.send_all_ran = False
+            st.session_state.pop("send_all_last_run", None)
+
+            st.session_state.successful_emails = 0
+            st.session_state.failed_emails = 0
+
+            # Reset previous campaign state
+            st.session_state.confirm_send_all = False
+
+            st.session_state.pop("emails_sent", None)
+            st.session_state.pop("emails_failed", None)
+            st.session_state.pop("emails_skipped", None)
             st.session_state.successful_emails = 0
             st.session_state.failed_emails = 0
 
@@ -273,6 +688,7 @@ with tab_preview:
     
 
             for index, lead in enumerate(leads):
+                current_failed = False
 
                 status.write(f"Generating email for **{lead.name}**...")
 
@@ -325,6 +741,7 @@ with tab_preview:
                         "• Invalid API configuration\n"
                         "• Unexpected AI response"
                     )
+                    current_failed = True
 
                 elif subject is not None and email is not None:
 
@@ -351,6 +768,10 @@ with tab_preview:
                         "lead": lead,
                         "subject": subject,
                         "email": email,
+
+                        "sent": False,
+                        "failed": current_failed,
+                        "skipped": False,
                     }
                 )
 
@@ -455,17 +876,17 @@ with tab_preview:
         col1, col2, col3, col4, col5 = st.columns(5)
 
         with col1:
-            st.markdown(kpi_card("Total Leads", len(leads)), unsafe_allow_html=True)
+            st.markdown(kpi_card("Total Leads", len(leads), "👥"), unsafe_allow_html=True)
 
         with col2:
             st.markdown(
-                kpi_card("Emails Generated", st.session_state.successful_emails),
+                kpi_card("Emails Generated", st.session_state.successful_emails, "✉️"),
                 unsafe_allow_html=True,
             )
 
         with col3:
             st.markdown(
-                kpi_card("Failed Emails", st.session_state.failed_emails),
+                kpi_card("Failed Emails", st.session_state.failed_emails, "⚠️"),
                 unsafe_allow_html=True,
             )
 
@@ -476,11 +897,11 @@ with tab_preview:
                 if attempted > 0
                 else 0
             )
-            st.markdown(kpi_card("Success Rate", f"{success_rate}%"), unsafe_allow_html=True)
+            st.markdown(kpi_card("Success Rate", f"{success_rate}%", "🎯"), unsafe_allow_html=True)
 
         with col5:
             st.markdown(
-                kpi_card("Campaign Time", f"{st.session_state.campaign_time}s"),
+                kpi_card("Campaign Time", f"{st.session_state.campaign_time}s", "⏱️"),
                 unsafe_allow_html=True,
             )
 
@@ -496,6 +917,65 @@ with tab_preview:
 # --------------------------------------------------
 with tab_emails:
     if len(st.session_state.results) > 0:
+
+        # ---------------- LIVE ANALYTICS ----------------
+
+
+
+        results = st.session_state.results
+
+        generated = sum(
+            1
+            for item in results
+            if (
+                item["email"] != "⚠️ Email could not be generated."
+                and not item["email"].startswith("❌")
+            )
+        )
+
+        sent = sum(
+            1
+            for item in results
+            if item.get("sent", False)
+        )
+
+        failed = sum(
+            1
+            for item in results
+            if item.get("failed", False)
+        )
+
+        skipped = sum(
+            1
+            for item in results
+            if item.get("skipped", False)
+        )
+        
+        col1, col2, col3, col4 = st.columns(4)
+
+        with col1:
+            st.metric(
+                "📧 Generated",
+                generated,
+            )
+
+        with col2:
+            st.metric(
+                "✅ Sent",
+                sent,
+            )
+
+        with col3:
+            st.metric(
+                "❌ Failed",
+                failed,
+            )
+        with col4:
+            st.metric("⏭️ Skipped", skipped)
+
+       
+        st.divider()
+
         render_email_cards(
             st.session_state.results,
             sender,
@@ -503,11 +983,22 @@ with tab_emails:
             tone,
             email_length,
         )
-        st.divider()
-        render_exports(st.session_state.results)
-    else:
-        st.info("📭 No emails generated yet. Upload a CSV and run a campaign from the **Preview & Generate** tab.")
 
+        st.divider()
+
+        render_send_all(
+            st.session_state.results,
+        )
+
+        render_exports(
+            st.session_state.results,
+        )
+
+    else:
+
+        st.info(
+            "📭 No emails generated yet. Upload a CSV and run a campaign from the Preview & Generate tab."
+        )
 # --------------------------------------------------
 # TAB 3 — ANALYTICS
 # --------------------------------------------------
@@ -515,8 +1006,7 @@ with tab_analytics:
     if len(st.session_state.results) > 0:
         render_analytics(
             st.session_state.results,
-            st.session_state.successful_emails,
-            st.session_state.failed_emails,
+            
         )
     else:
         st.info("📊 Analytics will appear here once a campaign has been run.")
@@ -535,4 +1025,4 @@ with tab_history:
 # ==================================================
 
 st.divider()
-st.caption("📧 AI Outreach Agent • Built with Streamlit & Google Gemini AI • BSCS Final Year Project • Developed by Adeeba Faiz")
+st.caption("📧 AI Outreach Agent • Built with Streamlit & Google Gemini AI  • Developed by Adeeba Faiz")

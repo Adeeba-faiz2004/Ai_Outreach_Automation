@@ -17,6 +17,24 @@ PROMPTS = {
     "Software": SOFTWARE_PROMPT,
     "Healthcare": HEALTHCARE_PROMPT,
 }
+
+
+def load_email_history() -> list | None:
+    """
+    Load all previously saved emails from disk.
+
+    Standalone function (no Gemini/API dependency) so the History tab
+    can read past campaigns even if the Gemini API key is missing or
+    invalid.
+    """
+    try:
+        with open("data/sent_emails.json", "r") as file:
+            return json.load(file)
+    except Exception as e:
+        log_error(f"Load Error: {e}")
+        return None
+
+
 class OutreachAgent:
 
     def __init__(
@@ -162,27 +180,28 @@ class OutreachAgent:
     #--------------------------------------------------
     def save_email(self, subject: str, email: str, lead: Lead) -> None:
         """
-        Save the generated subject and email to a JSON file.
+            Save or update generated email in history.
         """
 
         email_data = {
-        "company": self.company,
-        "sender": self.sender_name,
+            "company": self.company,
+            "sender": self.sender_name,
 
-        "recipient_name": lead.name,
-        "recipient_company": lead.company,
-        "recipient_position": lead.position,
+            "recipient_name": lead.name,
+            "recipient_company": lead.company,
+            "recipient_email": lead.email,
+            "recipient_position": lead.position,
 
-        "industry": lead.industry,
+            "industry": lead.industry,
 
-        "tone": self.tone,
-        "email_length": self.email_length,
+            "tone": self.tone,
+            "email_length": self.email_length,
 
-        "subject": subject,
-        "email": email,
+            "subject": subject,
+            "email": email,
 
-        "date": datetime.now().strftime("%d %B %Y"),
-    }
+            "date": datetime.now().strftime("%d %B %Y"),
+        }
 
         try:
 
@@ -193,16 +212,27 @@ class OutreachAgent:
             except (FileNotFoundError, json.JSONDecodeError):
                 emails = []
 
-            emails.append(email_data)
+            updated = False
+
+            for i, existing in enumerate(emails):
+
+                if existing.get("recipient_email") == lead.email:
+
+                    emails[i] = email_data
+                    updated = True
+                    break
+
+            if not updated:
+
+                emails.append(email_data)
 
             with open("data/sent_emails.json", "w") as file:
                 json.dump(emails, file, indent=4)
 
-            print("Email saved successfully")
+            print("Email history updated successfully.")
 
         except Exception as e:
-            log_error(f"Save Error: {e}")
-        
+            log_error(f"Save Error: {e}")    
 
     # -------------------------------------
 
@@ -210,13 +240,5 @@ class OutreachAgent:
         """
     Load all previously saved emails.
         """
-        try:
-
-            with open("data/sent_emails.json", "r") as file:
-
-                 return json.load(file)
-        except Exception as e:
-             log_error(f"Load Error: {e}")
-
-             return None
+        return load_email_history()
         

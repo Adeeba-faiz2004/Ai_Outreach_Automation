@@ -1,9 +1,58 @@
+import os
+
 import streamlit as st
 import streamlit.components.v1 as components
 
 from agent import OutreachAgent
 from services.email_sender import EmailSender
 from utils.pdf_generator import create_pdf
+
+
+@st.dialog("👁 Email Preview")
+def preview_email(item, sender, company):
+
+    st.markdown(
+    f"""
+<div style="padding:22px;
+background:#ffffff;
+border-radius:14px;
+border:1px solid #E5E4F4;
+box-shadow:0 4px 14px rgba(79,70,229,0.08);">
+
+<h4 style="color:#4F46E5;margin-top:0;">📧 From</h4>
+
+<b>{sender}</b><br>
+
+{company}
+
+<hr style="border-color:#E5E4F4;">
+
+<h4 style="color:#4F46E5;">📨 To</h4>
+
+<b>{item['lead'].name}</b><br>
+
+{item['lead'].email}
+
+<hr style="border-color:#E5E4F4;">
+
+<h4 style="color:#4F46E5;">📌 Subject</h4>
+
+<b>{item['subject']}</b>
+
+<hr style="border-color:#E5E4F4;">
+
+<div style="line-height:1.8;font-size:16px;">
+
+{item["email"].replace(chr(10), "<br>")}
+
+</div>
+
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+   
 
 
 def render_email_cards(
@@ -19,235 +68,291 @@ def render_email_cards(
     st.header("📨 Generated Emails")
 
     for item in results:
+        with st.container(border=True):
 
-        st.markdown("---")
 
-        lead = item["lead"]
+            lead = item["lead"]
 
-        st.markdown(
-            f"""
+            st.markdown(
+                f"""
 ### 👤 {lead.name}
 
 🏢 **Company:** {lead.company}
 
 📧 **Email:** {lead.email}
-"""
-        )
-
-        # ---------------- SUBJECT ----------------
-
-        st.markdown("#### 📌 Subject")
-        st.info(item["subject"])
-
-        # ---------------- EMAIL ----------------
-
-        st.markdown("#### ✉️ Generated Email")
-
-        st.text_area(
-            "",
-            value=item["email"],
-            height=240,
-            key=f"email_{lead.email}",
-            label_visibility="collapsed",
-        )
-
-        # ---------------- PDF ----------------
-
-        pdf_file = create_pdf(
-            item["subject"],
-            item["email"],
-            lead,
-        )
-
-        button_text = (
-            "🔄 Retry"
-            if item["email"] == "⚠️ Email could not be generated."
-            else "✨ Regenerate"
-        )
-
-        col1, col2, col3, col4, col5 = st.columns(5)
-
-        # ==========================================
-        # COPY EMAIL
-        # ==========================================
-
-        with col1:
-
-            components.html(
-                f"""
-                <button onclick="
-                    navigator.clipboard.writeText(`{item['email']}`);
-                    this.innerHTML='✅ Copied!';
-                    setTimeout(() => {{
-                        this.innerHTML='📋 Copy Email';
-                    }},2000);
-                ">
-                    📋 Copy Email
-                </button>
-                """,
-                height=45,
+    """
             )
 
-        # ==========================================
-        # DOWNLOAD TXT
-        # ==========================================
+            # ---------------- SUBJECT ----------------
 
-        with col2:
+            st.markdown("#### 📌 Subject")
+            st.info(item["subject"])
 
-            st.download_button(
-                "📄 Download TXT",
-                data=item["email"],
-                file_name=f"{lead.name}_email.txt",
-                mime="text/plain",
-                key=f"txt_{lead.email}",
+            # ---------------- EMAIL ----------------
+
+            st.markdown("#### ✉️ Generated Email")
+
+            email_key = f"email_{item['lead'].email}"
+
+            if email_key not in st.session_state:
+                st.session_state[email_key] = item["email"]
+
+            st.session_state[email_key] = item["email"]
+
+            st.text_area(
+                "",
+                key=email_key,
+                height=240,
+                label_visibility="collapsed",
+    )
+
+            # ---------------- PDF ----------------
+
+            pdf_file = create_pdf(
+                item["subject"],
+                item["email"],
+                lead,
             )
 
-        # ==========================================
-        # DOWNLOAD PDF
-        # ==========================================
+            button_text = (
+                "🔄 Retry"
+                if item["email"] == "⚠️ Email could not be generated."
+                else "✨ Regenerate"
+            )
 
-        with col3:
+            col1, col2, col3, col4, col5, col6 = st.columns(6)
 
-            with open(pdf_file, "rb") as file:
+            # ==========================================
+            # COPY EMAIL
+            # ==========================================
+
+            with col1:
+
+                components.html(
+                    f"""
+                    <button onclick="
+                        navigator.clipboard.writeText(`{item['email']}`);
+                        this.innerHTML='✅ Copied!';
+                        setTimeout(() => {{
+                            this.innerHTML='📋 Copy Email';
+                        }},2000);
+                    ">
+                        📋 Copy Email
+                    </button>
+                    """,
+                    height=45,
+                )
+
+            # ==========================================
+            # DOWNLOAD TXT
+            # ==========================================
+
+            with col2:
 
                 st.download_button(
-                    "📑 Download PDF",
-                    data=file,
-                    file_name=pdf_file,
-                    mime="application/pdf",
-                    key=f"pdf_{lead.email}",
+                    "📄 Download TXT",
+                    data=item["email"],
+                    file_name=f"{lead.name}_email.txt",
+                    mime="text/plain",
+                    key=f"txt_{lead.email}",
                 )
-        #---------------------------------------------
-                # ==========================================
-        # SEND EMAIL
-        # ==========================================
 
-        with col4:
+            # ==========================================
+            # DOWNLOAD PDF
+            # ==========================================
 
-            if st.button(
-                "📨 Send Email",
-                key=f"send_{lead.email}",
-            ):
+            with col3:
 
-                # Don't send failed emails
-                if (
-                    item["email"] == "⚠️ Email could not be generated."
-                    or item["email"].startswith("❌")
-                ):
+                with open(pdf_file, "rb") as file:
 
-                    st.error(
-                        "This email was not generated successfully. Please regenerate it first."
+                    st.download_button(
+                        "📑 Download PDF",
+                        data=file,
+                        file_name=os.path.basename(pdf_file),
+                        mime="application/pdf",
+                        key=f"pdf_{lead.email}",
+                    )
+            #---------------------------------------------
+                    # ==========================================
+            # SEND EMAIL
+            # ==========================================
+
+            with col4:
+
+               
+
+                can_send = (
+                        item["email"] != "⚠️ Email could not be generated."
+                        and not item["email"].startswith("❌")
+                        and not item.get("sent", False)
                     )
 
-                else:
+                button_label = (
+                            "✅ Sent"
+                            if item.get("sent", False)
+                            else "📨 Send Email"
+                        )
 
-                    with st.spinner(
-                        f"Sending email to {lead.company}..."
+                if st.button(
+                        button_label,
+                        disabled=not can_send,
+                        key=f"send_{item['lead'].email}",
                     ):
 
-                        success, message = email_sender.send(
-                            recipient=lead.email,
-                            subject=item["subject"],
-                            body=item["email"],
+                    # Don't send failed emails
+                    if (
+                        item["email"] == "⚠️ Email could not be generated."
+                        or item["email"].startswith("❌")
+                    ):
+
+                        st.error(
+                            "This email was not generated successfully. Please regenerate it first."
                         )
 
-                    if success:
+                    else:
 
-                        st.toast(
-                            f"📨 Email sent to {lead.company}",
-                            icon="✅",
-                        )
+                        with st.spinner(
+                            f"Sending email to {item['lead'].company}..."
+                        ):
 
-                        st.success(
-                            f"""
+                            if not email_sender.validate_email(
+                                item["lead"].email
+                            ):
+
+                                st.error(
+                                    f"""
+❌ Invalid email address
+
+Recipient:
+{item['lead'].email}
+
+Please verify the email before sending.
+            """
+                                )
+
+                                st.stop()
+
+                            success, message = email_sender.send(
+                                recipient=item["lead"].email,
+                                subject=item["subject"],
+                                body=item["email"],
+                            )
+
+                        if success:
+                            item["sent"] = True
+                            item["failed"] = False
+
+                            st.toast(
+                                f"📨 Email sent to {item['lead'].company}",
+                                icon="✅",
+                            )
+
+                            st.success(
+                                f"""
 ### ✅ Email Submitted
 
-**Recipient:** {lead.email}
+**Recipient:** {item['lead'].email}
 
-**Company:** {lead.company}
+**Company:** {item['lead'].company}
 
 **Status:**
 {message}
 
 ℹ️ Final delivery depends on the recipient's mail server.
-"""
-                        )
+            """
+                            )
+                            st.rerun()
 
-                    else:
+                        else:
 
-                        st.toast(
-                            "❌ Email Sending Failed",
-                            icon="❌",
-                        )
+                            st.toast(
+                                "❌ Email Sending Failed",
+                                icon="❌",
+                            )
 
-                        st.error(
-                            f"""
-### Email could not be sent
+                            st.error(
+                                f"""
+### ❌ Email could not be sent
 
-**Recipient:** {lead.email}
+**Recipient:** {item['lead'].email}
 
-**Company:** {lead.company}
+**Company:** {item['lead'].company}
 
 **Reason:**
 
 {message}
-"""
+            """
+                            ) 
+                            
+                                     
+            # ==========================================
+            #preview_email
+            # ==========================================
+            with col5:
+
+                if st.button(
+                    "👁 Preview",
+                    key=f"preview_{item['lead'].email}",
+                ):
+
+                    preview_email(
+                        item,
+                        sender,
+                        company,
+                    )
+            # ==========================================
+            # REGENERATE EMAIL
+            # ==========================================
+
+            with col6:
+
+                if st.button(
+                    button_text,
+                    key=f"regen_{lead.email}",
+                ):
+
+                    with st.spinner(
+                        f"Regenerating email for {lead.company}..."
+                    ):
+
+                        agent = OutreachAgent(
+                            sender_name=sender,
+                            company=company,
+                            tone=tone,
+                            email_length=email_length,
                         )
-                        # ---------------- Regenerate ----------------
 
-                # ==========================================
-        # REGENERATE EMAIL
-        # ==========================================
+                        new_subject, new_email = agent.generate_outreach(
+                            lead
+                        )
 
-        with col5:
+                    # --------------------------------------
+                    # GEMINI QUOTA
+                    # --------------------------------------
+                    if (
+                        new_subject == "QUOTA_EXCEEDED"
+                        or new_email == "QUOTA_EXCEEDED"
+                    ):
 
-            if st.button(
-                button_text,
-                key=f"regen_{lead.email}",
-            ):
-
-                with st.spinner(
-                    f"Regenerating email for {lead.company}..."
-                ):
-
-                    agent = OutreachAgent(
-                        sender_name=sender,
-                        company=company,
-                        tone=tone,
-                        email_length=email_length,
-                    )
-
-                    new_subject, new_email = agent.generate_outreach(
-                        lead
-                    )
-
-                # --------------------------------------
-                # GEMINI QUOTA
-                # --------------------------------------
-                if (
-                    new_subject == "QUOTA_EXCEEDED"
-                    or new_email == "QUOTA_EXCEEDED"
-                ):
-
-                    st.error(
-                        """
+                        st.error(
+                            """
 ⚠️ Gemini quota exhausted.
 
 Please wait until the quota resets
 or use another API key.
-"""
-                    )
+    """
+                        )
 
-                # --------------------------------------
-                # AI FAILED
-                # --------------------------------------
-                elif (
-                    new_subject == "GENERATION_FAILED"
-                    or new_email == "GENERATION_FAILED"
-                ):
+                    # --------------------------------------
+                    # AI FAILED
+                    # --------------------------------------
+                    elif (
+                        new_subject == "GENERATION_FAILED"
+                        or new_email == "GENERATION_FAILED"
+                    ):
 
-                    st.error(
-                        """
+                        st.error(
+                            """
 ❌ AI could not regenerate this email.
 
 Possible reasons:
@@ -258,54 +363,75 @@ Possible reasons:
 • Unexpected AI response
 
 Please try again later.
-"""
-                    )
+    """
+                        )
 
-                # --------------------------------------
-                # SUCCESS
-                # --------------------------------------
-                elif (
-                    new_subject is not None
-                    and new_email is not None
-                ):
+                    # --------------------------------------
+                    # SUCCESS
+                    # --------------------------------------
+                    elif (
+                        new_subject is not None
+                        and new_email is not None
+                    ):
 
-                    # Update current card
-                    item["subject"] = new_subject
-                    item["email"] = new_email
+                        # Update current card
+                        item["subject"] = new_subject
+                        item["email"] = new_email
 
-                    # Update session results
-                    for result in results:
+                        # Update session results
+                        for result in results:
 
-                        if (
-                            result["lead"].email
-                            == lead.email
-                        ):
+                            if result["lead"].email == lead.email:
 
-                            result["subject"] = new_subject
-                            result["email"] = new_email
-                            break
+                                result["subject"] = new_subject
+                                result["email"] = new_email
 
-                    agent.save_email(
-                        new_subject,
-                        new_email,
-                        lead,
-                    )
+                                # Regenerated email is now valid — clear
+                                # any stale sent/failed/skipped flags from
+                                # a previous attempt so KPIs stay accurate.
+                                result["sent"] = False
+                                result["failed"] = False
+                                result["skipped"] = False
 
-                    st.toast(
-                        "✅ Email regenerated successfully!",
-                        icon="✅",
-                    )
+                                break
 
-                    st.rerun()
+                        agent.save_email(
+                            new_subject,
+                            new_email,
+                            lead,
+                        )
+                        st.session_state.successful_emails = sum(
+                            1
+                            for r in results
+                            if (
+                                r["email"] != "⚠️ Email could not be generated."
+                                and not r["email"].startswith("❌")
+                            )
+                        )
 
-                # --------------------------------------
-                # UNKNOWN ERROR
-                # --------------------------------------
-                else:
+                        st.session_state.failed_emails = sum(
+                            1
+                            for r in results
+                            if (
+                                r["email"] == "⚠️ Email could not be generated."
+                                or r["email"].startswith("❌")
+                            )
+                        )
 
-                    st.error(
-                        "❌ Regeneration failed. Please try again."
-                    )
-                        
-            # -----------------------------------------
-           
+                        st.toast(
+                            "✅ Email regenerated successfully!",
+                            icon="✅",
+                        )
+
+                        st.rerun()
+
+                    # --------------------------------------
+                    # UNKNOWN ERROR
+                    # --------------------------------------
+                    else:
+
+                        st.error(
+                            "❌ Regeneration failed. Please try again."
+                        )
+                            
+                # -----------------------------------------

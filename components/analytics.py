@@ -3,7 +3,7 @@ import plotly.express as px
 import streamlit as st
 
 
-def render_analytics(results, successful, failed):
+def render_analytics(results):
 
     st.subheader("📊 Campaign Analytics")
 
@@ -17,25 +17,47 @@ def render_analytics(results, successful, failed):
 
     with col1:
 
-        chart_data = pd.DataFrame(
-            {
-                "Status": ["Successful", "Failed"],
-                "Count": [successful, failed],
-            }
+        generated = sum(
+            1
+            for item in results
+            if (
+                item["email"] != "⚠️ Email could not be generated."
+                and not item["email"].startswith("❌")
+            )
         )
 
+        failed = sum(
+            1
+            for item in results
+            if (
+                item["email"] == "⚠️ Email could not be generated."
+                or item["email"].startswith("❌")
+            )
+        )
+
+        chart_data = pd.DataFrame({
+            "Status": [
+                "Generated",
+                "Failed",
+            ],
+            "Count": [
+                generated,
+                failed,
+            ],
+        })
+
         fig = px.pie(
-        chart_data,
-        names="Status",
-        values="Count",
-        hole=0.45,
-        title="Email Generation Status",
-        color="Status",
-        color_discrete_map={
-            "Successful": "#2563EB",   # Blue
-            "Failed": "#93C5FD",       # Light Blue
-    },
-)
+            chart_data,
+            names="Status",
+            values="Count",
+            hole=0.45,
+            title="Email Generation Status",
+            color="Status",
+            color_discrete_map={
+                "Generated": "#2563EB",
+                "Failed": "#DC2626",
+            },
+        )
 
         st.plotly_chart(
             fig,

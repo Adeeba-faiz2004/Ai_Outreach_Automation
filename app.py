@@ -40,19 +40,18 @@ for lead in leads:
     print(f"Generating email for {lead.name}")
     print("=" * 50)
 
-    subject = agent.generate_subject(lead)
-    if not subject:
+    subject, email = agent.generate_outreach(lead)
 
-           print("Subject generation failed. Skipping this lead.")
+    if subject in ("QUOTA_EXCEEDED", "GENERATION_FAILED") or not subject:
 
-           log_info(f"Subject generation failed for {lead.name}")
+           print("Subject/email generation failed. Skipping this lead.")
+
+           log_info(f"Generation failed for {lead.name}")
 
            continue
 
     print("\nSubject:")
     print(subject)
-
-    email = agent.generate_email(lead)
 
     if email:
 

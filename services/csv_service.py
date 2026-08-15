@@ -51,27 +51,55 @@ class CSVService:
             "Email",
         ]
 
-        # Validate CSV columns
+        # Normalize headers (strip whitespace, match case-insensitively)
+        # so a CSV with "name"/"NAME"/" Name " still works instead of
+        # rejecting the whole upload.
+        column_lookup = {
+            str(col).strip().lower(): col for col in df.columns
+        }
+
+        rename_map = {}
+        missing = []
+
         for column in required_columns:
+            key = column.lower()
+            if key in column_lookup:
+                rename_map[column_lookup[key]] = column
+            else:
+                missing.append(column)
 
-            if column not in df.columns:
+        if missing:
+            raise ValueError(
+                f"Missing required column(s): {', '.join(missing)}"
+            )
 
-                raise ValueError(
-                    f"Missing required column: {column}"
-                )
+        df = df.rename(columns=rename_map)
 
         leads = []
+        skipped_rows = 0
 
         for _, row in df.iterrows():
 
+            name = str(row["Name"]).strip()
+            email = str(row["Email"]).strip()
+
+            # Skip rows with no name/email at all instead of silently
+            # generating a broken lead (e.g. name="nan", email="nan").
+            if not name or name.lower() == "nan" or not email or email.lower() == "nan":
+                skipped_rows += 1
+                continue
+
             lead = Lead(
-                name=str(row["Name"]).strip(),
+                name=name,
                 company=str(row["Company"]).strip(),
                 position=str(row["Position"]).strip(),
                 industry=str(row["Industry"]).strip(),
-                email=str(row["Email"]).strip(),
+                email=email,
             )
 
             leads.append(lead)
+
+        if skipped_rows:
+            print(f"⚠️ Skipped {skipped_rows} row(s) missing a name or email.")
 
         return leads

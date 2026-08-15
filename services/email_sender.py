@@ -1,6 +1,7 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import re
 
 from config import (
     SENDER_EMAIL,
@@ -11,7 +12,12 @@ from config import (
 
 
 class EmailSender:
+    
+    def validate_email(self, email: str):
 
+        pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+
+        return re.match(pattern, email) is not None
     def send(
     self,
     recipient,

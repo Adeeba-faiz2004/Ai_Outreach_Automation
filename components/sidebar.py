@@ -7,45 +7,50 @@ def _inject_sidebar_styles():
     st.markdown(
         """
         <style>
+            @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+
             /* Sidebar background + base spacing */
             section[data-testid="stSidebar"] {
-                background: linear-gradient(180deg, #F7F9FC 0%, #EEF2F9 100%);
-                border-right: 1px solid #E3E8F0;
+                background: linear-gradient(180deg, #F8F8FD 0%, #EFEEFB 100%);
+                border-right: 1px solid #E5E4F4;
             }
 
             /* Brand header block */
             .sb-brand {
                 text-align: center;
-                padding: 18px 10px 16px 10px;
-                border-radius: 14px;
-                background: linear-gradient(135deg, #1F3864 0%, #2E74B5 100%);
+                padding: 20px 10px 18px 10px;
+                border-radius: 16px;
+                background: linear-gradient(135deg, #3D33B0 0%, #6D63EE 60%, #FF6B4A 140%);
                 color: #ffffff;
                 margin-bottom: 18px;
+                box-shadow: 0 8px 18px rgba(79, 70, 229, 0.22);
             }
             .sb-brand .sb-logo {
-                font-size: 2.1rem;
+                font-size: 2.2rem;
                 line-height: 1;
                 margin-bottom: 4px;
             }
             .sb-brand .sb-title {
-                font-size: 1.05rem;
-                font-weight: 700;
+                font-family: 'Plus Jakarta Sans', sans-serif;
+                font-size: 1.08rem;
+                font-weight: 800;
+                letter-spacing: -0.01em;
                 margin: 2px 0 0 0;
             }
             .sb-brand .sb-subtitle {
-                font-size: 0.75rem;
-                opacity: 0.85;
+                font-size: 0.76rem;
+                opacity: 0.9;
                 margin-top: 2px;
             }
             .sb-brand .sb-badge {
                 display: inline-block;
-                margin-top: 8px;
-                padding: 2px 10px;
+                margin-top: 9px;
+                padding: 3px 12px;
                 font-size: 0.68rem;
-                font-weight: 600;
+                font-weight: 700;
                 letter-spacing: 0.04em;
                 text-transform: uppercase;
-                background: rgba(255,255,255,0.18);
+                background: rgba(255,255,255,0.22);
                 border-radius: 999px;
             }
 
@@ -56,7 +61,7 @@ def _inject_sidebar_styles():
                 gap: 6px;
                 font-size: 0.82rem;
                 font-weight: 700;
-                color: #1F3864;
+                color: #3D33B0;
                 text-transform: uppercase;
                 letter-spacing: 0.03em;
                 margin: 4px 0 6px 0;
@@ -71,13 +76,13 @@ def _inject_sidebar_styles():
                 line-height: 1.5;
             }
             .sb-footer a {
-                color: #2E74B5;
+                color: #4F46E5;
                 text-decoration: none;
-                font-weight: 600;
+                font-weight: 700;
             }
 
             section[data-testid="stSidebar"] .stButton button {
-                border-radius: 8px;
+                border-radius: 10px;
             }
         </style>
         """,

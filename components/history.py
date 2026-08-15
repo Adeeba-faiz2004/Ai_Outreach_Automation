@@ -1,6 +1,6 @@
 import streamlit as st
 
-from agent import OutreachAgent
+from agent import load_email_history
 
 
 def render_history(
@@ -10,14 +10,10 @@ def render_history(
     email_length,
 ):
 
-    agent = OutreachAgent(
-        sender_name=sender,
-        company=company,
-        tone=tone,
-        email_length=email_length,
-    )
-
-    history = agent.load_email()
+    # Reading history is a local file operation and doesn't need an
+    # OutreachAgent (which would otherwise require a valid Gemini API
+    # key just to open this tab).
+    history = load_email_history()
 
     st.header("📜 Campaign History")
 

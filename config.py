@@ -18,4 +18,3 @@ APP_PASSWORD = os.getenv("APP_PASSWORD")
 SMTP_SERVER = "smtp.gmail.com"
 
 SMTP_PORT = 587
-print("OpenRouter Key:", OPENROUTER_API_KEY)

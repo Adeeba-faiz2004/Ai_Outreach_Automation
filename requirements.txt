@@ -1,5 +1,8 @@
-google-generativeai
+google-genai
 python-dotenv
 streamlit
 pandas
 requests
+plotly
+reportlab
+bcrypt
