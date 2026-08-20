@@ -218,11 +218,20 @@ class OutreachAgent:
 
                 if existing.get("recipient_email") == lead.email:
 
+                    # Preserve reply-tracking status across regenerations —
+                    # regenerating an email for the same lead shouldn't
+                    # silently wipe out a reply that was already recorded.
+                    email_data["replied"] = existing.get("replied", False)
+                    email_data["replied_at"] = existing.get("replied_at")
+
                     emails[i] = email_data
                     updated = True
                     break
 
             if not updated:
+
+                email_data["replied"] = False
+                email_data["replied_at"] = None
 
                 emails.append(email_data)
 

@@ -2,6 +2,7 @@ import streamlit as st
 import time
 
 from services.email_sender import EmailSender
+from services.n8n_service import N8NService
 
 GENERATION_FAILED_MARKER = "⚠️ Email could not be generated."
 
@@ -24,9 +25,10 @@ def _is_sendable(item) -> bool:
     )
 
 
-def render_send_all(results):
+def render_send_all(results, sender_name: str = ""):
 
     sender = EmailSender()
+    n8n = N8NService()
 
     generated_ready = sum(
         1
@@ -37,6 +39,32 @@ def render_send_all(results):
     st.success(
         f"✅ {generated_ready} generated emails are ready."
 )
+
+    # --------------------------------------------------
+    # DELIVERY METHOD
+    # --------------------------------------------------
+    delivery_options = ["Direct SMTP (Gmail)"]
+    if n8n.is_configured():
+        delivery_options.append("n8n Automated Workflow")
+
+    delivery_method = st.radio(
+        "Delivery method",
+        delivery_options,
+        horizontal=True,
+        help=(
+            "Direct SMTP sends emails immediately from this app. "
+            "n8n routes each email through your automated n8n workflow "
+            "(validation → Gmail node → logging), which can later be "
+            "extended with delays, retries, CRM updates, or notifications "
+            "without changing this app's code."
+        ),
+    )
+
+    if not n8n.is_configured():
+        st.caption(
+            "ℹ️ n8n workflow delivery is available once N8N_WEBHOOK_URL is "
+            "set in your .env file. See n8n_workflows/outreach_automation.json."
+        )
 
     can_send_any = any(_is_sendable(item) for item in results)
 
@@ -131,6 +159,12 @@ def render_send_all(results):
                         recipient=item["lead"].email,
                         subject=item["subject"],
                         body=item["email"],
+                    ) if delivery_method == "Direct SMTP (Gmail)" else n8n.trigger_send(
+                        lead_name=item["lead"].name,
+                        recipient_email=item["lead"].email,
+                        sender_name=sender_name,
+                        subject=item["subject"],
+                        email_body=item["email"],
                     )
 
                     time.sleep(1)
@@ -141,6 +175,7 @@ def render_send_all(results):
 
                         item["sent"] = True
                         item["failed"] = False
+                        item["delivery_method"] = delivery_method
 
                     else:
 

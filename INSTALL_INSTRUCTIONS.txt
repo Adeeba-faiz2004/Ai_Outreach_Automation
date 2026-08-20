@@ -1,0 +1,41 @@
+================================================================
+HOW TO APPLY THIS UPDATE TO YOUR REPO
+================================================================
+
+STEP 1 — Replace these files (same paths as in your repo):
+  - dashboard.py
+  - auth.py
+  - agent.py
+  - config.py
+  - components/history.py
+  - components/send_all.py
+  - components/analytics.py
+
+STEP 2 — Add these NEW files (create the folders if needed):
+  - services/n8n_service.py
+  - utils/reply_tracker.py
+  - n8n_workflows/outreach_automation.json
+
+STEP 3 — Make sure utils/ has an __init__.py file (empty file is fine)
+  so Python treats it as a package: utils/__init__.py
+
+STEP 4 — Add "requests" to requirements.txt if it isn't already there.
+
+STEP 5 — n8n setup (optional but recommended — see README.md
+  "n8n Workflow Setup" section for full steps).
+
+STEP 6 — Run the app and test each new feature:
+  - Pause/Resume/Complete a campaign from the sidebar
+  - Upload a CSV with one intentionally invalid email to see the
+    deliverability warning
+  - Send a few emails, then go to Campaign History and mark one as
+    "Replied" — check that the Reply Rate metric updates
+  - Check the Analytics tab for the new "Delivery Performance" section
+
+================================================================
+WHAT WAS ALREADY IN YOUR PROJECT (untouched)
+================================================================
+Everything else — Gemini integration, prompt engineering, CSV upload,
+authentication, existing analytics charts, TXT/PDF export, campaign
+history display — is exactly as you built it. Only the specific
+sections above were added or modified.
