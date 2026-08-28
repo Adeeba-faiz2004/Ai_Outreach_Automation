@@ -20,7 +20,6 @@ from auth import (
     get_user_campaigns,
     save_lead,
     get_campaign_leads,
-    update_campaign_status,
 )
 
 
@@ -555,11 +554,6 @@ if campaigns:
         for campaign in campaigns
     }
 
-    campaign_status_map = {
-        campaign[0]: campaign[2]
-        for campaign in campaigns
-    }
-
     selected_campaign_name = st.sidebar.selectbox(
         "📁 Select Campaign",
         options=list(campaign_options.keys()),
@@ -573,56 +567,6 @@ if campaigns:
     st.session_state.selected_campaign_id = (
         selected_campaign_id
     )
-
-    current_status = campaign_status_map.get(
-        selected_campaign_id, "Active"
-    )
-
-    status_badge = {
-        "Active": "🟢 Active",
-        "Paused": "⏸️ Paused",
-        "Completed": "✅ Completed",
-    }.get(current_status, current_status)
-
-    st.sidebar.caption(f"Status: {status_badge}")
-
-    status_col1, status_col2, status_col3 = st.sidebar.columns(3)
-
-    with status_col1:
-        if st.button(
-            "⏸️ Pause",
-            use_container_width=True,
-            disabled=(current_status != "Active"),
-            key="pause_campaign_btn",
-        ):
-            update_campaign_status(selected_campaign_id, "Paused")
-            st.rerun()
-
-    with status_col2:
-        if st.button(
-            "▶️ Resume",
-            use_container_width=True,
-            disabled=(current_status != "Paused"),
-            key="resume_campaign_btn",
-        ):
-            update_campaign_status(selected_campaign_id, "Active")
-            st.rerun()
-
-    with status_col3:
-        if st.button(
-            "🏁 Complete",
-            use_container_width=True,
-            disabled=(current_status == "Completed"),
-            key="complete_campaign_btn",
-        ):
-            update_campaign_status(selected_campaign_id, "Completed")
-            st.rerun()
-
-    if current_status == "Paused":
-        st.sidebar.warning(
-            "This campaign is paused. Resume it before generating or "
-            "sending emails."
-        )
 
 else:
 
@@ -676,6 +620,7 @@ with tab_preview:
                 "Position": lead.position,
                 "Industry": lead.industry,
                 "Email": lead.email,
+                "Phone": getattr(lead, "phone", ""),
             }
             for lead in leads
         ]
@@ -690,66 +635,13 @@ with tab_preview:
             hide_index=True,
         )
 
-        # ------------------------------------------------------
-        # DELIVERABILITY SAFEGUARD — flag invalid emails and
-        # duplicate recipients *before* any AI credits are spent
-        # or any send attempt is made.
-        # ------------------------------------------------------
-        import re as _re
-        from collections import Counter as _Counter
-
-        _email_pattern = _re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
-
-        invalid_emails = [
-            lead.email for lead in leads
-            if not _email_pattern.match(lead.email or "")
-        ]
-
-        email_counts = _Counter(lead.email for lead in leads)
-        duplicate_emails = [
-            email for email, count in email_counts.items() if count > 1
-        ]
-
-        if invalid_emails:
-            st.warning(
-                f"⚠️ {len(invalid_emails)} lead(s) have an invalid email "
-                f"format and will be skipped when sending: "
-                f"{', '.join(invalid_emails[:5])}"
-                + (" ..." if len(invalid_emails) > 5 else "")
-            )
-
-        if duplicate_emails:
-            st.warning(
-                f"⚠️ {len(duplicate_emails)} duplicate email address(es) "
-                f"found in this list — each will only be emailed once: "
-                f"{', '.join(duplicate_emails[:5])}"
-                + (" ..." if len(duplicate_emails) > 5 else "")
-            )
-
         st.divider()
-
-        campaign_is_paused = (
-            campaign_status_map.get(
-                st.session_state.get("selected_campaign_id"), "Active"
-            )
-            == "Paused"
-            if campaigns
-            else False
-        )
-
-        if campaign_is_paused:
-            st.warning(
-                "⏸️ This campaign is paused. Resume it from the sidebar "
-                "before generating emails."
-            )
-
         st.caption("Ready to generate personalized outreach emails?")
 
         generate = st.button(
             "🚀 Generate Emails",
             use_container_width=True,
             type="primary",
-            disabled=campaign_is_paused,
         )
 
         # ==============================================

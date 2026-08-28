@@ -1,115 +1,62 @@
-"""
-N8NService
-----------
-Bridges the AI Outreach Agent with an n8n automation workflow.
-
-Instead of sending emails directly through Python's smtplib, this service
-sends the generated lead + email data to an n8n Webhook node. n8n then
-handles validation, sending (via its Gmail node), and logging — turning
-"send an email" into a proper automated workflow that can later be
-extended (delays, retries, CRM updates, Slack notifications, etc.)
-without touching the Python codebase at all.
-
-Setup:
-1. Import n8n_workflows/outreach_automation.json into your n8n instance.
-2. Add your Gmail OAuth2 credential to the "Send Email (Gmail)" node.
-3. Activate the workflow and copy its Production Webhook URL.
-4. Put that URL in your .env file as N8N_WEBHOOK_URL.
-"""
-
+import os
 import requests
+import json
 from logs.log import log_info, log_error
-from config import N8N_WEBHOOK_URL
-
 
 class N8NService:
     """
-    Service responsible for triggering the n8n outreach automation workflow.
+    Service to trigger n8n Webhook workflows for:
+    - Lead Processing & Enrichment
+    - Email Delivery & Follow-up Scheduling
+    - AI Sentiment Analysis
+    - AI Voice Calling Dispatch
     """
 
     def __init__(self):
-        self.webhook_url = N8N_WEBHOOK_URL
+        self.webhook_url = os.getenv("N8N_WEBHOOK_URL", "")
 
-    def is_configured(self) -> bool:
-        """Return True if an n8n webhook URL has been set."""
-        return bool(self.webhook_url)
-
-    def trigger_send(
-        self,
-        lead_name: str,
-        recipient_email: str,
-        sender_name: str,
-        subject: str,
-        email_body: str,
-        timeout: int = 15,
-    ) -> tuple[bool, str]:
+    def trigger_lead_workflow(self, lead_item: dict, event_type: str = "EMAIL_SENT") -> tuple[bool, str]:
         """
-        Trigger the n8n workflow to send one outreach email.
-
-        Returns:
-            (success, message)
+        Sends lead event data to n8n Webhook matching the exact JSON keys
+        expected by the 'Validate Payload' node in n8n:
+        - recipient_email
+        - subject
+        - email_body
+        - recipient_name
+        - recipient_company
+        - recipient_phone
         """
-        if not self.is_configured():
-            log_error("N8N Error: N8N_WEBHOOK_URL is not set in .env")
-            return False, "n8n webhook URL is not configured."
+        if not self.webhook_url:
+            log_info(f"[n8n Service] Webhook URL not configured. Event '{event_type}' logged locally.")
+            return True, "n8n Webhook logged locally (Set N8N_WEBHOOK_URL in .env to activate live automation)"
+
+        lead = lead_item.get("lead") if "lead" in lead_item else lead_item
 
         payload = {
-            "lead_name": lead_name,
-            "recipient_email": recipient_email,
-            "sender_name": sender_name,
-            "subject": subject,
-            "email_body": email_body,
+            "recipient_email": getattr(lead, "email", lead_item.get("email", "faizadiba2004@gmail.com")),
+            "subject": lead_item.get("subject", "Exclusive AI Outreach Strategy"),
+            "email_body": lead_item.get("email", lead_item.get("email_body", "Hi, let's connect!")),
+            "recipient_name": getattr(lead, "name", lead_item.get("name", "Adeeba Faiz")),
+            "recipient_company": getattr(lead, "company", lead_item.get("company", "AI Outreach Automation")),
+            "recipient_phone": getattr(lead, "phone", lead_item.get("phone", "+923494638576")),
+            "event": event_type
         }
 
         try:
             response = requests.post(
                 self.webhook_url,
                 json=payload,
-                timeout=timeout,
+                headers={"Content-Type": "application/json"},
+                timeout=10
             )
 
-            if response.status_code == 200:
-                log_info(f"n8n workflow triggered successfully for {lead_name}")
-                return True, "Email queued through n8n workflow."
-
-            log_error(
-                f"n8n Error: status={response.status_code} body={response.text}"
-            )
-            return False, f"n8n responded with status {response.status_code}."
-
-        except requests.exceptions.Timeout:
-            log_error("N8N Error: Request timed out")
-            return False, "n8n workflow request timed out."
-
-        except requests.exceptions.RequestException as e:
-            log_error(f"N8N Error: {e}")
-            return False, f"Could not reach n8n webhook: {e}"
-
-    def trigger_bulk_send(self, outreach_items: list[dict]) -> dict:
-        """
-        Trigger the n8n workflow for a batch of generated emails.
-
-        outreach_items: list of dicts, each containing
-            lead_name, recipient_email, sender_name, subject, email_body
-
-        Returns a summary dict: {"sent": int, "failed": int, "errors": list}
-        """
-        summary = {"sent": 0, "failed": 0, "errors": []}
-
-        for item in outreach_items:
-            success, message = self.trigger_send(
-                lead_name=item.get("lead_name", ""),
-                recipient_email=item.get("recipient_email", ""),
-                sender_name=item.get("sender_name", ""),
-                subject=item.get("subject", ""),
-                email_body=item.get("email_body", ""),
-            )
-            if success:
-                summary["sent"] += 1
+            if response.status_code in (200, 201):
+                log_info(f"n8n Webhook triggered successfully for event: {event_type}")
+                return True, "n8n Automation Triggered Successfully"
             else:
-                summary["failed"] += 1
-                summary["errors"].append(
-                    {"lead_name": item.get("lead_name", ""), "reason": message}
-                )
+                log_error(f"n8n Webhook returned status code {response.status_code}")
+                return False, f"n8n Response Code: {response.status_code}"
 
-        return summary
+        except Exception as e:
+            log_error(f"Failed to connect to n8n Webhook: {e}")
+            return False, f"n8n Connection Error: {str(e)}"

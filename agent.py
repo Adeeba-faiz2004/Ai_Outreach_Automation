@@ -1,12 +1,12 @@
 from datetime import datetime
-
-
 import json
 from prompts import (
     SOFTWARE_PROMPT,
     HEALTHCARE_PROMPT,
+    TECHNOLOGY_PROMPT,
+    RETAIL_PROMPT,
+    FINANCE_PROMPT,
     GENERAL_PROMPT,
-    
 )
 from gemini_service import GeminiService
 from logs.log import log_error
@@ -16,16 +16,15 @@ from models.lead import Lead
 PROMPTS = {
     "Software": SOFTWARE_PROMPT,
     "Healthcare": HEALTHCARE_PROMPT,
+    "Technology": TECHNOLOGY_PROMPT,
+    "Retail": RETAIL_PROMPT,
+    "Finance": FINANCE_PROMPT,
 }
 
 
 def load_email_history() -> list | None:
     """
     Load all previously saved emails from disk.
-
-    Standalone function (no Gemini/API dependency) so the History tab
-    can read past campaigns even if the Gemini API key is missing or
-    invalid.
     """
     try:
         with open("data/sent_emails.json", "r") as file:
@@ -47,104 +46,84 @@ class OutreachAgent:
         """
         Initialize the Outreach Agent.
         """
-
         self.sender_name = sender_name
         self.company = company
-
         self.tone = tone
         self.email_length = email_length
-
         self.gemini = GeminiService()
-       
-    # -------------------------------------
 
-    
-    def choose_prompt(self, lead:Lead) -> str:
+    def choose_prompt(self, lead: Lead) -> str:
         """
-      Select and personalize the prompt
-      based on the given industry.
-      """
-        base_prompt = PROMPTS.get(lead.industry, GENERAL_PROMPT)
+        Select and personalize the prompt based on the given industry.
+        Uses intelligent matching to select the exact domain prompt.
+        """
+        industry_raw = lead.industry.strip()
+        industry_lower = industry_raw.lower()
+
+        # Intelligent matching for prompt selection
+        if "soft" in industry_lower or "dev" in industry_lower:
+            base_prompt = SOFTWARE_PROMPT
+        elif "health" in industry_lower or "med" in industry_lower or "clinic" in industry_lower:
+            base_prompt = HEALTHCARE_PROMPT
+        elif "tech" in industry_lower or "cloud" in industry_lower or "ai" in industry_lower or "it" == industry_lower:
+            base_prompt = TECHNOLOGY_PROMPT
+        elif "retail" in industry_lower or "e-com" in industry_lower or "store" in industry_lower or "shop" in industry_lower:
+            base_prompt = RETAIL_PROMPT
+        elif "fin" in industry_lower or "bank" in industry_lower or "invest" in industry_lower:
+            base_prompt = FINANCE_PROMPT
+        else:
+            base_prompt = PROMPTS.get(industry_raw, GENERAL_PROMPT)
 
         return f"""
-     You are an expert sales copywriter.
+You are an expert sales copywriter.
 
-     Your task is to write ONLY ONE personalized cold outreach email.
+Your task is to write ONLY ONE personalized cold outreach email.
 
-     Company Name: {self.company}
-     Sender Name: {self.sender_name}
-     Recipient Name: {lead.name}
+Sender Details:
+- Company Name: {self.company}
+- Sender Name: {self.sender_name}
 
-     Recipient Company: {lead.company}
+Recipient Details:
+- Name: {lead.name}
+- Position: {lead.position}
+- Company: {lead.company}
+- Industry: {lead.industry}
 
-     Recipient Position: {lead.position}
-     Industry: {lead.industry}
-     Writing Tone:{self.tone}
-     Email Length:{self.email_length}
+Writing Style:
+- Tone: {self.tone}
+- Target Length: {self.email_length}
 
-     Requirements:
-     - Generate only ONE email.
-     - Do NOT generate multiple versions.
-     - Do NOT include explanations, notes, or headings.
-       IMPORTANT:
+Industry Specific Guidance:
+{base_prompt}
 
-     -IMPORTANT:
+Strict Rules:
+- Return response in this EXACT format:
 
-     -Return your response in this exact format:
+Subject:
+<email subject>
 
-      Subject:
-      <email subject>
+Email:
+<complete email text>
 
-      Email:
-      <complete email>
+- Address the recipient naturally by name.
+- Mention their company ({lead.company}) naturally in the email.
+- Highlight specific benefits relevant to {lead.industry}.
+- Do NOT use markdown formatting (* or #). Return plain text only.
+- Do NOT include any explanations, notes, or meta text.
+- The email must end with:
 
-     -Do not include explanations.
-     - Do not use markdown.
-     - Return only the subject and email.
+Best regards,
+{self.sender_name}
+"""
 
-    -The email must start directly with the greeting.
-     - Address the recipient by name.
-
-     - Mention the recipient company naturally.
-
-     - Write as if the email is specifically written for this person.
-     - If recipient name is unknown, use "Dear Sir/Madam,".
-     - Never use placeholders like [Recipient Name] or [Company Name].
-     - Mention the company name naturally.
-     - Keep the email between 120–180 words.
-    
-     - Do not use markdown formatting.
-        Return plain text only.
-     -  Write the email using the requested tone.
-     - Keep the email according to the requested length.
-     - End the email with:
-
-     Best regards,
-     {self.sender_name}
-
-     Base Instructions:
-     {base_prompt}
-
-     Return ONLY the final email.
-     
-    -Generate a DIFFERENT version from any previous email.
-    -Use different wording, opening, CTA, and sentence structure.
-    -Do not repeat the previous email.
-     """
-    
-    # ------------------------------------------------
     def generate_outreach(self, lead: Lead) -> tuple[str | None, str | None]:
         """
         Generate subject and email using Google Gemini AI.
         """
-
-        print(f"Generating outreach for {lead.company}")
+        print(f"Generating outreach for {lead.company} ({lead.industry})")
 
         prompt = self.choose_prompt(lead)
 
-        # -----------------------------
-        # GENERATE USING GEMINI
-        # -----------------------------
         response = self.gemini.generate(prompt)
 
         if response == "QUOTA_EXCEEDED":
@@ -157,82 +136,55 @@ class OutreachAgent:
             log_error("Outreach generation failed.")
             return None, None
 
-    # -----------------------------
-    # PARSE RESPONSE
-    # -----------------------------
+        # Parse Subject and Email Body
         try:
-
             subject = (
                 response.split("Email:")[0]
                 .replace("Subject:", "")
                 .strip()
-        )
-
+            )
             email = response.split("Email:")[1].strip()
-
             return subject, email
 
-        except Exception:
-
-            log_error("Response parsing failed.")
-
+        except Exception as e:
+            log_error(f"Response parsing failed: {e}")
             return None, None
-    #--------------------------------------------------
+
     def save_email(self, subject: str, email: str, lead: Lead) -> None:
         """
-            Save or update generated email in history.
+        Save or update generated email in history.
         """
-
         email_data = {
             "company": self.company,
             "sender": self.sender_name,
-
             "recipient_name": lead.name,
             "recipient_company": lead.company,
             "recipient_email": lead.email,
+            "recipient_phone": getattr(lead, "phone", ""),
             "recipient_position": lead.position,
-
             "industry": lead.industry,
-
             "tone": self.tone,
             "email_length": self.email_length,
-
             "subject": subject,
             "email": email,
-
             "date": datetime.now().strftime("%d %B %Y"),
         }
 
         try:
-
             try:
                 with open("data/sent_emails.json", "r") as file:
                     emails = json.load(file)
-
             except (FileNotFoundError, json.JSONDecodeError):
                 emails = []
 
             updated = False
-
             for i, existing in enumerate(emails):
-
                 if existing.get("recipient_email") == lead.email:
-
-                    # Preserve reply-tracking status across regenerations —
-                    # regenerating an email for the same lead shouldn't
-                    # silently wipe out a reply that was already recorded.
-                    email_data["replied"] = existing.get("replied", False)
-                    email_data["replied_at"] = existing.get("replied_at")
-
                     emails[i] = email_data
                     updated = True
                     break
 
             if not updated:
-
-                email_data["replied"] = False
-                email_data["replied_at"] = None
-
                 emails.append(email_data)
 
             with open("data/sent_emails.json", "w") as file:
@@ -241,13 +193,10 @@ class OutreachAgent:
             print("Email history updated successfully.")
 
         except Exception as e:
-            log_error(f"Save Error: {e}")    
-
-    # -------------------------------------
+            log_error(f"Save Error: {e}")
 
     def load_email(self) -> list | None:
         """
-    Load all previously saved emails.
+        Load all previously saved emails.
         """
         return load_email_history()
-        

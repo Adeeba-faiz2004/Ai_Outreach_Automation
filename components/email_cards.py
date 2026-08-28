@@ -5,8 +5,9 @@ import streamlit.components.v1 as components
 
 from agent import OutreachAgent
 from services.email_sender import EmailSender
+from services.calling_service import CallingService
+from services.n8n_service import N8NService
 from utils.pdf_generator import create_pdf
-from auth import update_lead_status
 
 
 @st.dialog("👁 Email Preview")
@@ -63,6 +64,8 @@ def render_email_cards(
 ):
 
     email_sender = EmailSender()
+    calling_service = CallingService()
+    n8n_service = N8NService()
 
     st.header("📨 Generated Emails")
 
@@ -70,6 +73,7 @@ def render_email_cards(
         with st.container(border=True):
 
             lead = item["lead"]
+            phone_display = f"\n\n📞 **Phone:** {lead.phone}" if getattr(lead, "phone", "") else ""
 
             st.markdown(
                 f"""
@@ -77,15 +81,17 @@ def render_email_cards(
 
 🏢 **Company:** {lead.company}
 
-📧 **Email:** {lead.email}
+📧 **Email:** {lead.email}{phone_display}
     """
             )
 
             # ---------------- SUBJECT ----------------
+
             st.markdown("#### 📌 Subject")
             st.info(item["subject"])
 
             # ---------------- EMAIL ----------------
+
             st.markdown("#### ✉️ Generated Email")
 
             email_key = f"email_{item['lead'].email}"
@@ -103,6 +109,7 @@ def render_email_cards(
             )
 
             # ---------------- PDF ----------------
+
             pdf_file = create_pdf(
                 item["subject"],
                 item["email"],
@@ -120,7 +127,9 @@ def render_email_cards(
             # ==========================================
             # COPY EMAIL
             # ==========================================
+
             with col1:
+
                 components.html(
                     f"""
                     <button onclick="
@@ -139,7 +148,9 @@ def render_email_cards(
             # ==========================================
             # DOWNLOAD TXT
             # ==========================================
+
             with col2:
+
                 st.download_button(
                     "📄 Download TXT",
                     data=item["email"],
@@ -151,8 +162,11 @@ def render_email_cards(
             # ==========================================
             # DOWNLOAD PDF
             # ==========================================
+
             with col3:
+
                 with open(pdf_file, "rb") as file:
+
                     st.download_button(
                         "📑 Download PDF",
                         data=file,
@@ -164,7 +178,9 @@ def render_email_cards(
             # ==========================================
             # SEND EMAIL
             # ==========================================
+
             with col4:
+
                 can_send = (
                     item["email"] != "⚠️ Email could not be generated."
                     and not item["email"].startswith("❌")
@@ -182,20 +198,26 @@ def render_email_cards(
                     disabled=not can_send,
                     key=f"send_{item['lead'].email}",
                 ):
+
                     if (
                         item["email"] == "⚠️ Email could not be generated."
                         or item["email"].startswith("❌")
                     ):
+
                         st.error(
                             "This email was not generated successfully. Please regenerate it first."
                         )
+
                     else:
+
                         with st.spinner(
                             f"Sending email to {item['lead'].company}..."
                         ):
+
                             if not email_sender.validate_email(
                                 item["lead"].email
                             ):
+
                                 st.error(
                                     f"""
 ❌ Invalid email address
@@ -206,6 +228,7 @@ Recipient:
 Please verify the email before sending.
             """
                                 )
+
                                 st.stop()
 
                             success, message = email_sender.send(
@@ -217,16 +240,6 @@ Please verify the email before sending.
                         if success:
                             item["sent"] = True
                             item["failed"] = False
-
-                            # ========== Update DB status ==========
-                            if item.get("lead_id"):
-                                update_lead_status(
-                                    item["lead_id"],
-                                    status="sent",
-                                    subject=item["subject"],
-                                    body=item["email"],
-                                )
-                            # =====================================
 
                             st.toast(
                                 f"📨 Email sent to {item['lead'].company}",
@@ -250,15 +263,6 @@ Please verify the email before sending.
                             st.rerun()
 
                         else:
-                            item["failed"] = True
-
-                            if item.get("lead_id"):
-                                update_lead_status(
-                                    item["lead_id"],
-                                    status="failed",
-                                    subject=item.get("subject"),
-                                    body=item.get("email"),
-                                )
 
                             st.toast(
                                 "❌ Email Sending Failed",
@@ -280,13 +284,15 @@ Please verify the email before sending.
                             )
 
             # ==========================================
-            # PREVIEW
+            # PREVIEW EMAIL
             # ==========================================
             with col5:
+
                 if st.button(
                     "👁 Preview",
                     key=f"preview_{item['lead'].email}",
                 ):
+
                     preview_email(
                         item,
                         sender,
@@ -296,14 +302,18 @@ Please verify the email before sending.
             # ==========================================
             # REGENERATE EMAIL
             # ==========================================
+
             with col6:
+
                 if st.button(
                     button_text,
                     key=f"regen_{lead.email}",
                 ):
+
                     with st.spinner(
                         f"Regenerating email for {lead.company}..."
                     ):
+
                         agent = OutreachAgent(
                             sender_name=sender,
                             company=company,
@@ -316,51 +326,24 @@ Please verify the email before sending.
                         )
 
                     if (
-                        new_subject == "QUOTA_EXCEEDED"
-                        or new_email == "QUOTA_EXCEEDED"
-                    ):
-                        st.error(
-                            """
-⚠️ Gemini quota exhausted.
-
-Please wait until the quota resets
-or use another API key.
-    """
-                        )
-
-                    elif (
-                        new_subject == "GENERATION_FAILED"
-                        or new_email == "GENERATION_FAILED"
-                    ):
-                        st.error(
-                            """
-❌ AI could not regenerate this email.
-
-Possible reasons:
-
-• Internet connection issue
-• Gemini API temporarily unavailable
-• Invalid API configuration
-• Unexpected AI response
-
-Please try again later.
-    """
-                        )
-
-                    elif (
                         new_subject is not None
                         and new_email is not None
                     ):
+
                         item["subject"] = new_subject
                         item["email"] = new_email
 
                         for result in results:
+
                             if result["lead"].email == lead.email:
+
                                 result["subject"] = new_subject
                                 result["email"] = new_email
+
                                 result["sent"] = False
                                 result["failed"] = False
                                 result["skipped"] = False
+
                                 break
 
                         agent.save_email(
@@ -368,16 +351,6 @@ Please try again later.
                             new_email,
                             lead,
                         )
-
-                        # Update DB status to generated again
-                        if item.get("lead_id"):
-                            update_lead_status(
-                                item["lead_id"],
-                                status="generated",
-                                subject=new_subject,
-                                body=new_email,
-                            )
-
                         st.session_state.successful_emails = sum(
                             1
                             for r in results
@@ -400,7 +373,53 @@ Please try again later.
                             "✅ Email regenerated successfully!",
                             icon="✅",
                         )
+
                         st.rerun()
 
                     else:
-                        st.error("Unknown error while regenerating email.")
+
+                        st.error(
+                            "❌ Regeneration failed. Please try again."
+                        )
+
+            # ==========================================
+            # DUAL-ACTION BUTTONS: AI VOICE CALL & N8N AUTOMATION
+            # ==========================================
+            st.write("")
+            call_col1, call_col2 = st.columns(2)
+
+            with call_col1:
+                if st.button(
+                    f"📞 Dispatch AI Voice Call to {lead.name}",
+                    key=f"call_{lead.email}",
+                    use_container_width=True,
+                ):
+                    phone = getattr(lead, "phone", "") or "+923494638576"
+                    with st.spinner(f"Initiating AI Voice Call to {lead.name} ({phone})..."):
+                        success, msg = calling_service.trigger_ai_call(
+                            phone_number=phone,
+                            lead_name=lead.name,
+                            company_name=lead.company,
+                            industry=lead.industry,
+                        )
+                        if success:
+                            st.toast(f"📞 AI Call Dispatched to {lead.name}!", icon="✅")
+                            st.success(f"✅ {msg}")
+                        else:
+                            st.error(f"❌ Call Failed: {msg}")
+
+            with call_col2:
+                if st.button(
+                    f"⚡ Trigger n8n Automated Workflow",
+                    key=f"n8n_{lead.email}",
+                    use_container_width=True,
+                ):
+                    with st.spinner(f"Triggering n8n Webhook for {lead.name}..."):
+                        success, msg = n8n_service.trigger_lead_workflow(
+                            item, event_type="EMAIL_SENT"
+                        )
+                        if success:
+                            st.toast(f"⚡ n8n Workflow Triggered!", icon="✅")
+                            st.success(f"✅ {msg}")
+                        else:
+                            st.error(f"❌ n8n Webhook Error: {msg}")
