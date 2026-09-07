@@ -1072,7 +1072,9 @@ The repository should be accompanied by a small set of carefully selected screen
 
 **Live Application:** `Coming Soon`
 
-**Video Demonstration:** `Coming Soon`
+**Video Demonstration:**  version 1 available: https://www.linkedin.com/posts/adeebafaiz2004_python-ai-automation-activity-7492617606021922816-JbsT?utm_source=share&utm_medium=member_desktop&rcm=ACoAAGPEAqQBoCSxQE_318ThzYBr6aXm5UmeEww
+
+**version-2 coming soon**
 
 **n8n Workflow:** [`n8n_workflows/outreach_automation.json`](./n8n_workflows/outreach_automation.json)
 
