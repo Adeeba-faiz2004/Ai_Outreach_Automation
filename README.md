@@ -26,6 +26,18 @@
 </p>
 
 ---
+# 🎥 Demonstration
+
+**Live Application:** `Coming Soon`
+
+**Video Demonstration:**  version 1 available: https://www.linkedin.com/posts/adeebafaiz2004_python-ai-automation-activity-7492617606021922816-JbsT?utm_source=share&utm_medium=member_desktop&rcm=ACoAAGPEAqQBoCSxQE_318ThzYBr6aXm5UmeEww
+
+**version-2 coming soon**
+
+**n8n Workflow:** [`n8n_workflows/outreach_automation.json`](./n8n_workflows/outreach_automation.json)
+
+**Project Repository:** [`Ai_Outreach_Automation`](https://github.com/Adeeba-faiz2004/Ai_Outreach_Automation)
+
 
 ## 🧭 Why This Project?
 
@@ -1024,61 +1036,7 @@ The workflow can be imported into n8n and configured with the required Gmail cre
 
 The repository should be accompanied by a small set of carefully selected screenshots rather than a large collection of UI images.
 
-### Recommended evidence set
 
-| Screenshot         | What it demonstrates       |
-| ------------------ | -------------------------- |
-| Dashboard          | System control plane       |
-| CSV / Lead Input   | Data ingestion             |
-| Generated Email    | LLM personalization        |
-| Email Preview      | Human-in-the-loop control  |
-| Campaign Analytics | Operational measurement    |
-| n8n Workflow       | Event-driven orchestration |
-| AI Voice Workflow  | Multimodal extension       |
-
-### Screenshot 01 — Dashboard
-
-```text
-[ ADD DASHBOARD SCREENSHOT ]
-```
-
-### Screenshot 02 — AI Generation
-
-```text
-[ ADD GENERATED EMAIL SCREENSHOT ]
-```
-
-### Screenshot 03 — Campaign Analytics
-
-```text
-[ ADD ANALYTICS SCREENSHOT ]
-```
-
-### Screenshot 04 — n8n Workflow
-
-```text
-[ ADD FULL n8n WORKFLOW SCREENSHOT ]
-```
-
-### Screenshot 05 — AI Voice / Workflow Decision
-
-```text
-[ ADD VAPI / DECISION SCREENSHOT ]
-```
-
----
-
-# 🎥 Demonstration
-
-**Live Application:** `Coming Soon`
-
-**Video Demonstration:**  version 1 available: https://www.linkedin.com/posts/adeebafaiz2004_python-ai-automation-activity-7492617606021922816-JbsT?utm_source=share&utm_medium=member_desktop&rcm=ACoAAGPEAqQBoCSxQE_318ThzYBr6aXm5UmeEww
-
-**version-2 coming soon**
-
-**n8n Workflow:** [`n8n_workflows/outreach_automation.json`](./n8n_workflows/outreach_automation.json)
-
-**Project Repository:** [`Ai_Outreach_Automation`](https://github.com/Adeeba-faiz2004/Ai_Outreach_Automation)
 
 ---
 
