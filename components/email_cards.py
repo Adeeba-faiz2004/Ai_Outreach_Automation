@@ -389,12 +389,15 @@ Please verify the email before sending.
             call_col1, call_col2 = st.columns(2)
 
             with call_col1:
+                has_phone = bool(getattr(lead, "phone", "").strip())
+
                 if st.button(
                     f"📞 Dispatch AI Voice Call to {lead.name}",
                     key=f"call_{lead.email}",
                     use_container_width=True,
+                    disabled=not has_phone,
                 ):
-                    phone = getattr(lead, "phone", "") or "+923494638576"
+                    phone = lead.phone.strip()
                     with st.spinner(f"Initiating AI Voice Call to {lead.name} ({phone})..."):
                         success, msg = calling_service.trigger_ai_call(
                             phone_number=phone,
@@ -407,6 +410,9 @@ Please verify the email before sending.
                             st.success(f"✅ {msg}")
                         else:
                             st.error(f"❌ Call Failed: {msg}")
+
+                if not has_phone:
+                    st.caption("⚠️ No phone number for this lead — add one in the CSV to enable calling.")
 
             with call_col2:
                 if st.button(

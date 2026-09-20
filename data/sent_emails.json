@@ -876,13 +876,14 @@
         "recipient_name": "John",
         "recipient_company": "Microsoft",
         "recipient_email": "john@example.com",
+        "recipient_phone": "",
         "recipient_position": "HR Manager",
-        "industry": "Technology",
+        "industry": "Healthcare",
         "tone": "Professional",
         "email_length": "Short",
-        "subject": "Boosting HR Efficiency at Microsoft with AI",
-        "email": "Dear John,\n\nAs an HR Manager at Microsoft, you play a key role in optimizing talent and operations for a world-leading technology company. I'm Adeeba Faiz from AI Outreach Automation. We empower businesses to achieve significant efficiency gains through advanced AI and automation.\n\nWe recognize the unique challenges and opportunities within HR at Microsoft. Our solutions are designed to streamline routine tasks, improve data accuracy, and free your team to concentrate on strategic initiatives and employee growth. This translates to enhanced productivity and more impactful HR contributions.\n\nI'm confident a short discussion could illustrate how AI Outreach Automation can align with Microsoft's pursuit of innovation. Would you consider a brief 15-minute call next week to explore specific ways we can support your department?\n\nBest regards,\nAdeeba Faiz",
-        "date": "10 August 2026"
+        "subject": "Enhancing Patient Care and Efficiency at Microsoft",
+        "email": "Hi John,\n\nI'm Adeeba Faiz from AI Outreach Automation. I understand that at Microsoft, you're deeply committed to advancing healthcare delivery, and I believe we can help amplify that impact.\n\nOur AI solutions are specifically designed to address the unique challenges within healthcare. We can significantly reduce the heavy administrative workloads for your medical staff, freeing them to focus more on patient care by enhancing scheduling efficiency. Imagine automating repetitive documentation and critical patient follow-ups, allowing your teams to dedicate more time to what matters most.\n\nThis approach not only improves the quality of patient care but also streamlines operational efficiency and strengthens decision-making across your healthcare initiatives.\n\nWould you be open to a brief 15-minute chat next week to explore how AI Outreach Automation can specifically benefit Microsoft's healthcare sector?\n\nBest regards,\nAdeeba Faiz",
+        "date": "10 September 2026"
     },
     {
         "company": "AI Outreach Automation",
@@ -890,13 +891,14 @@
         "recipient_name": "Sarah",
         "recipient_company": "Google",
         "recipient_email": "sarah@example.com",
+        "recipient_phone": "",
         "recipient_position": "CTO",
         "industry": "Software",
         "tone": "Professional",
         "email_length": "Short",
-        "subject": "Accelerating Google's Strategic Efficiency with AI",
-        "email": "Dear Sarah,\n\nAs the CTO at Google, your vision for driving innovation and operational excellence is truly inspiring. I'm reaching out from AI Outreach Automation because I believe our specialized AI platform could significantly contribute to your objectives for enhancing internal processes and market agility.\n\nOur solutions are engineered to profoundly impact large-scale operations like Google's. We empower organizations to achieve remarkable workflow automation, which in turn elevates overall productivity across teams. Imagine the time saving and substantial cost reduction when repetitive yet critical tasks are intelligently handled by AI, freeing your brilliant engineers to focus on groundbreaking innovation. This strategic reallocation not only optimizes resources but directly fuels business growth by accelerating project cycles and enabling faster market penetration.\n\nI would be keen to briefly discuss how AI Outreach Automation could be specifically tailored to support Google's ambitious goals. Would you be open to a quick 15-minute call sometime next week?\n\nBest regards,\nAdeeba Faiz",
-        "date": "10 August 2026"
+        "subject": "Accelerating Google's Software Development with AI Automation",
+        "email": "Dear Sarah,\n\nAs CTO at Google, your focus on pushing the boundaries of software innovation and operational efficiency is paramount. I'm reaching out from AI Outreach Automation because our platform is engineered to directly enhance development workflows at leading technology companies like Google.\n\nOur AI and workflow automation solution is designed to significantly accelerate software development cycles by intelligently automating repetitive code and comprehensive workflow testing. This approach not only enhances your engineering team's productivity, allowing them to focus on complex problem-solving, but also drastically reduces time-to-market for critical projects. Ultimately, this translates into measurable business growth and substantial operational cost reductions.\n\nI believe a brief 15-minute conversation could effectively demonstrate how our capabilities specifically align with Google's strategic objectives for greater efficiency and innovation.\n\nBest regards,\nAdeeba Faiz",
+        "date": "10 September 2026"
     },
     {
         "company": "AI Outreach Automation",
@@ -904,13 +906,14 @@
         "recipient_name": "David",
         "recipient_company": "Amazon",
         "recipient_email": "david@example.com",
+        "recipient_phone": "",
         "recipient_position": "CEO",
         "industry": "Retail",
         "tone": "Professional",
         "email_length": "Short",
-        "subject": "Elevating Operational Efficiency at Amazon",
-        "email": "Dear David,\n\nAs CEO of Amazon, your leadership in driving innovation and operational excellence across such a massive enterprise is truly inspiring. My name is Adeeba Faiz, and I represent AI Outreach Automation. We focus on empowering global leaders like yourself with cutting-edge AI and automation solutions designed to redefine business efficiency.\n\nI envision significant potential for our tailored AI strategies to further streamline Amazon\u2019s complex logistical networks, enhance predictive capabilities for supply chain optimization, and elevate the precision of customer service interactions. Our technology is built to unearth new levels of productivity, reduce operational costs, and free up valuable resources for strategic initiatives.\n\nI would be grateful for a brief 15-minute conversation to illustrate how our unique approach could unlock a new frontier of efficiency and competitive advantage specifically for Amazon. Would you be available for a quick chat sometime next week?\n\nBest regards,\nAdeeba Faiz",
-        "date": "10 August 2026"
+        "subject": "Optimizing Amazon's Future with AI",
+        "email": "Dear David,\n\nAt Amazon, your leadership in innovation and operational scale is truly unmatched. My team at AI Outreach Automation specializes in leveraging advanced AI to empower companies like yours to not just meet, but redefine future demands.\n\nWe envision a future for Amazon where AI intelligently optimizes your vast cloud infrastructure and complex system workflows, ensuring peak performance and agility. Imagine your critical data pipelines and routine IT tasks automating seamlessly, freeing your expert teams to focus entirely on breakthrough initiatives. This strategic application of AI means scaling operations effortlessly to meet any retail demand, achieving significant efficiency gains with lower overhead, and ultimately accelerating business growth and innovation across your entire ecosystem.\n\nWe believe this integrated approach can further enhance Amazon's trajectory. Would you be open to a brief conversation to explore how this vision aligns with Amazon's strategic priorities?\n\nBest regards,\nAdeeba Faiz",
+        "date": "10 September 2026"
     },
     {
         "company": "AI Outreach Automation",

@@ -32,15 +32,26 @@ class N8NService:
 
         lead = lead_item.get("lead") if "lead" in lead_item else lead_item
 
+        recipient_email = getattr(lead, "email", lead_item.get("email", ""))
+        recipient_phone = getattr(lead, "phone", lead_item.get("phone", ""))
+
+        if not recipient_email:
+            log_error("[n8n Service] Missing recipient_email — cannot trigger workflow.")
+            return False, "No recipient email found for this lead."
+
         payload = {
-            "recipient_email": getattr(lead, "email", lead_item.get("email", "faizadiba2004@gmail.com")),
-            "subject": lead_item.get("subject", "Exclusive AI Outreach Strategy"),
-            "email_body": lead_item.get("email", lead_item.get("email_body", "Hi, let's connect!")),
-            "recipient_name": getattr(lead, "name", lead_item.get("name", "Adeeba Faiz")),
-            "recipient_company": getattr(lead, "company", lead_item.get("company", "AI Outreach Automation")),
-            "recipient_phone": getattr(lead, "phone", lead_item.get("phone", "+923494638576")),
+            "recipient_email": recipient_email,
+            "subject": lead_item.get("subject", ""),
+            "email_body": lead_item.get("email", lead_item.get("email_body", "")),
+            "lead_name": getattr(lead, "name", lead_item.get("name", "")),
+            "sender_name": lead_item.get("sender_name", ""),
+            "recipient_company": getattr(lead, "company", lead_item.get("company", "")),
+            "recipient_phone": recipient_phone,
             "event": event_type
         }
+
+        if not recipient_phone and event_type == "NO_REPLY":
+            log_info(f"[n8n Service] No phone number for {payload['lead_name']} — AI voice-call step will be skipped by n8n.")
 
         try:
             response = requests.post(
