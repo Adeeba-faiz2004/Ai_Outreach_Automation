@@ -20,6 +20,7 @@ from auth import (
     get_user_campaigns,
     save_lead,
     get_campaign_leads,
+    update_campaign_status,
 )
 
 
@@ -554,6 +555,11 @@ if campaigns:
         for campaign in campaigns
     }
 
+    campaign_status_map = {
+        campaign[0]: campaign[2]
+        for campaign in campaigns
+    }
+
     selected_campaign_name = st.sidebar.selectbox(
         "📁 Select Campaign",
         options=list(campaign_options.keys()),
@@ -568,9 +574,63 @@ if campaigns:
         selected_campaign_id
     )
 
+    current_campaign_status = campaign_status_map.get(
+        selected_campaign_id, "Active"
+    )
+    st.session_state.current_campaign_status = current_campaign_status
+
+    status_badge = {
+        "Active": "🟢 Active",
+        "Paused": "⏸️ Paused",
+        "Completed": "✅ Completed",
+    }.get(current_campaign_status, current_campaign_status)
+    st.sidebar.caption(f"Status: {status_badge}")
+
+    pause_col, resume_col, complete_col = st.sidebar.columns(3)
+
+    with pause_col:
+        if st.button(
+            "⏸️ Pause",
+            use_container_width=True,
+            disabled=(current_campaign_status != "Active"),
+            key="pause_campaign_btn",
+        ):
+            update_campaign_status(selected_campaign_id, "Paused")
+            st.toast("Campaign paused.", icon="⏸️")
+            st.rerun()
+
+    with resume_col:
+        if st.button(
+            "▶️ Resume",
+            use_container_width=True,
+            disabled=(current_campaign_status != "Paused"),
+            key="resume_campaign_btn",
+        ):
+            update_campaign_status(selected_campaign_id, "Active")
+            st.toast("Campaign resumed.", icon="▶️")
+            st.rerun()
+
+    with complete_col:
+        if st.button(
+            "🏁 Complete",
+            use_container_width=True,
+            disabled=(current_campaign_status == "Completed"),
+            key="complete_campaign_btn",
+        ):
+            update_campaign_status(selected_campaign_id, "Completed")
+            st.toast("Campaign marked complete.", icon="🏁")
+            st.rerun()
+
+    if current_campaign_status == "Paused":
+        st.sidebar.warning(
+            "This campaign is paused. Resume it before generating "
+            "new emails."
+        )
+
 else:
 
     st.session_state.selected_campaign_id = None
+    st.session_state.current_campaign_status = None
 
     st.sidebar.info(
         "Create a campaign first."
@@ -636,12 +696,23 @@ with tab_preview:
         )
 
         st.divider()
+
+        campaign_is_paused = (
+            st.session_state.get("current_campaign_status") == "Paused"
+        )
+        if campaign_is_paused:
+            st.warning(
+                "⏸️ This campaign is paused. Resume it from the sidebar "
+                "before generating emails."
+            )
+
         st.caption("Ready to generate personalized outreach emails?")
 
         generate = st.button(
             "🚀 Generate Emails",
             use_container_width=True,
             type="primary",
+            disabled=campaign_is_paused,
         )
 
         # ==============================================

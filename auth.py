@@ -27,11 +27,24 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
                 name TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'Active',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
             """
         )
+
+        # Migration safety: existing databases created before this
+        # feature was added won't have a `status` column yet. SQLite
+        # has no "ADD COLUMN IF NOT EXISTS", so we try and ignore the
+        # error if the column already exists. This must never raise
+        # or crash init_db() for users with an older database file.
+        try:
+            conn.execute(
+                "ALTER TABLE campaigns ADD COLUMN status TEXT NOT NULL DEFAULT 'Active'"
+            )
+        except sqlite3.OperationalError:
+            pass
 
         # LEADS TABLE
         conn.execute(
@@ -114,8 +127,8 @@ def create_campaign(user_id, campaign_name):
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.execute(
             """
-            INSERT INTO campaigns (user_id, name)
-            VALUES (?, ?)
+            INSERT INTO campaigns (user_id, name, status)
+            VALUES (?, ?, 'Active')
             """,
             (user_id, campaign_name),
         )
@@ -123,11 +136,32 @@ def create_campaign(user_id, campaign_name):
         return cursor.lastrowid
 
 
+def update_campaign_status(campaign_id, status):
+    """
+    Update a campaign's status. Allowed values: 'Active', 'Paused',
+    'Completed'. Raises ValueError for anything else so a typo in
+    calling code fails loudly during development instead of silently
+    writing a bad value into the database.
+    """
+    valid_statuses = ("Active", "Paused", "Completed")
+    if status not in valid_statuses:
+        raise ValueError(
+            f"Invalid status '{status}'. Must be one of {valid_statuses}."
+        )
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "UPDATE campaigns SET status = ? WHERE id = ?",
+            (status, campaign_id),
+        )
+        conn.commit()
+
+
 def get_user_campaigns(user_id):
     with sqlite3.connect(DB_PATH) as conn:
         campaigns = conn.execute(
             """
-            SELECT id, name, created_at
+            SELECT id, name, status, created_at
             FROM campaigns
             WHERE user_id = ?
             ORDER BY created_at DESC
